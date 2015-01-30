@@ -40,7 +40,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABLE_REMINDER + "("
                 + KEY_ID + " INTEGER PRIMARY KEY," + KEY_TITLE + " TEXT,"
-                + KEY_DESCR + " TEXT," + KEY_EVENT_TIME + " INTEGER," + KEY_MINUTES_BET + " INTEGER," + KEY_IS_CALENDAREVENT_ADDED + " INTEGER" + ")";
+                + KEY_DESCR + " TEXT," + KEY_EVENT_TIME + " INTEGER," + KEY_MINUTES_BET + " INTEGER," + KEY_IS_CALENDAREVENT_ADDED + " INTEGER"+ ")";
         db.execSQL(CREATE_CONTACTS_TABLE);
     }
 
@@ -61,9 +61,10 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_TITLE, r.getTitle());
         values.put(KEY_DESCR, r.getDescription());
         values.put(KEY_EVENT_TIME, r.getEventTime());
-        values.put(KEY_MINUTES_BET, r.getMinutesBeforeEventTime());
+        values.put(KEY_MINUTES_BET, r.getMinutesBeforeEventTime().getValue());
         int isCalendarEventAdded = r.isCalendarEventAdded() ? 1 : 0;
         values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
+
         // Inserting Row
         db.insert(TABLE_REMINDER, null, values);
         db.close(); // Closing database connection
@@ -83,8 +84,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 r.setTitle(cursor.getString(1));
                 r.setDescription(cursor.getString(2));
                 r.setEventTime(Long.parseLong(cursor.getString(3)));
-                r.setMinutesBeforeEventTime(Integer.parseInt(cursor.getString(4)));
+                r.setMinutesBeforeEventTime(MinutesBeforeEventTime.getTypeByValue(Integer.parseInt(cursor.getString(4))));
                 r.setCalendarEventAdded(Integer.parseInt(cursor.getString(5)) != 0);
+
                 // Adding reminder to list
                 reminderList.add(r);
                 cursor.moveToNext();
@@ -108,7 +110,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_TITLE, r.getTitle());
         values.put(KEY_DESCR, r.getDescription());
         values.put(KEY_EVENT_TIME, r.getEventTime());
-        values.put(KEY_MINUTES_BET, r.getMinutesBeforeEventTime());
+        values.put(KEY_MINUTES_BET, r.getMinutesBeforeEventTime().getValue());
         int isCalendarEventAdded = r.isCalendarEventAdded() ? 1 : 0;
         values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
 
@@ -121,9 +123,10 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         String countQuery = "SELECT  * FROM " + TABLE_REMINDER;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(countQuery, null);
+        int count = cursor.getCount();
         cursor.close();
 
         // return count
-        return cursor.getCount();
+        return count;
     }
 }

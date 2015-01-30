@@ -13,6 +13,7 @@ import android.view.MenuInflater;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by viktoria on 28.01.15.
@@ -25,7 +26,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     public static final Format dateFormat = new SimpleDateFormat("dd MMMM yyyy");
     public static final Format timeFormat = new SimpleDateFormat("HH:mm");
     public static final String TAG = "REMINDER_LOGS";
-
+public static int LAST_ID =0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,7 +86,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         db.addReminder(r);
         ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesCreated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000));
+        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesCreated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
     }
 
     @Override
@@ -100,7 +101,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         }
         ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesUpdated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000));
+        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesUpdated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
 
     }
 
@@ -117,8 +118,10 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
         } else {
             Intent intentAlarm = new Intent(this, MyReceiver.class);
+            intentAlarm.putExtra(getResources().getString(R.string.titleVarIntent), r.getTitle());
+            intentAlarm.putExtra(getResources().getString(R.string.descrVarIntent), r.getDescription());
             AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            alarmManager.cancel(PendingIntent.getBroadcast(this, 1, intentAlarm, 0));
+            alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
         }
     }
 
@@ -129,6 +132,13 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
             db.deleteReminder(r);
             reminderItems.remove(r);
             Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesDeleted));
+            if (r.isCalendarEventAdded()) {
+
+            } else {
+                Intent intentAlarm = new Intent(this, MyReceiver.class);
+                AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+            }
         }
         Log.e(MainActivity.TAG,"amount of reminders:"+ db.getRemindersCount());
     }

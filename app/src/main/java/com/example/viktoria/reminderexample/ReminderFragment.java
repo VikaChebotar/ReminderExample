@@ -95,16 +95,16 @@ public class ReminderFragment extends Fragment {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), R.layout.simple_spinner_item, getResources().getStringArray(R.array.remind_time));
         remindTimeSpinner.setAdapter(adapter);
         switch (r.getMinutesBeforeEventTime()) {
-            case 0:
+            case ON_TIME:
                 remindTimeSpinner.setSelection(0);
                 break;
-            case 1:
+            case ONE_MINUTE:
                 remindTimeSpinner.setSelection(1);
                 break;
-            case 5:
+            case FIVE_MINUTES:
                 remindTimeSpinner.setSelection(2);
                 break;
-            case 60:
+            case ONE_DAY:
                 remindTimeSpinner.setSelection(3);
                 break;
         }
@@ -133,7 +133,7 @@ public class ReminderFragment extends Fragment {
                 //update calendar instance and timeLabel
                 calendar.set(Calendar.HOUR_OF_DAY, selectedHour);
                 calendar.set(Calendar.MINUTE, selectedMinute);
-                calendar.set(Calendar.SECOND,0);
+                calendar.set(Calendar.SECOND, 0);
                 timeLabel.setText(timeFormat.format(calendar.getTime()));
             }
         }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
@@ -214,20 +214,24 @@ public class ReminderFragment extends Fragment {
 
         r.setTitle(titleET.getText().toString());
         r.setDescription(descrET.getText().toString());
+        if(!editMode){
+            r.setId(MainActivity.LAST_ID);
+            MainActivity.LAST_ID++;
+        }
 
         r.setEventTime(calendar.getTimeInMillis());
         switch (remindTimeSpinner.getSelectedItemPosition()) {
             case 0:
-                r.setMinutesBeforeEventTime(0);
+                r.setMinutesBeforeEventTime(MinutesBeforeEventTime.ON_TIME);
                 break;
             case 1:
-                r.setMinutesBeforeEventTime(1);
+                r.setMinutesBeforeEventTime(MinutesBeforeEventTime.ONE_MINUTE);
                 break;
             case 2:
-                r.setMinutesBeforeEventTime(5);
+                r.setMinutesBeforeEventTime(MinutesBeforeEventTime.FIVE_MINUTES);
                 break;
             case 3:
-                r.setMinutesBeforeEventTime(60);
+                r.setMinutesBeforeEventTime(MinutesBeforeEventTime.ONE_DAY);
                 break;
         }
         r.setCalendarEventAdded(checkBox.isChecked());
@@ -265,14 +269,14 @@ public class ReminderFragment extends Fragment {
                         ContentValues reminder = new ContentValues();
                         reminder.put(CalendarContract.Reminders.EVENT_ID, id);
                         reminder.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
-                        reminder.put(CalendarContract.Reminders.MINUTES, r.getMinutesBeforeEventTime());
+                        reminder.put(CalendarContract.Reminders.MINUTES, r.getMinutesBeforeEventTime().getValue());
                         //Uri uri2 = cr.insert(CalendarContract.Reminders.CONTENT_URI, reminder);
                         AsyncQueryHandler handler =
                                 new AsyncQueryHandler(cr) {
                                     @Override
                                     protected void onInsertComplete(int token, Object cookie, Uri uri) {
                                         super.onInsertComplete(token, cookie, uri);
-                                        Toast.makeText(getActivity(), getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getActivity(), getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
                                     }
                                 };
                         handler.startInsert(-1, null, CalendarContract.Reminders.CONTENT_URI, reminder);
@@ -289,18 +293,10 @@ public class ReminderFragment extends Fragment {
         //pass title and description to receiver and then to service to show them in notification
         intentAlarm.putExtra(getResources().getString(R.string.titleVarIntent), r.getTitle());
         intentAlarm.putExtra(getResources().getString(R.string.descrVarIntent), r.getDescription());
-        int flag;
-      //  if(editMode){
-            flag = PendingIntent.FLAG_UPDATE_CURRENT;
-       // }
-//        else{
-//            flag = PendingIntent.FLAG_ONE_SHOT;
-//        }
-        r.setRequestCode(new Random().nextInt((1000 - 0) + 1) + 0);
         AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, r.getEventTime() - r.getMinutesBeforeEventTime() * 60, PendingIntent.getBroadcast(getActivity(), 1, intentAlarm, flag));
-        Toast.makeText(getActivity(), getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime() * 60 * 1000), Toast.LENGTH_SHORT).show();
-       }
+        alarmManager.set(AlarmManager.RTC_WAKEUP, r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000, PendingIntent.getBroadcast(getActivity(), r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+        Toast.makeText(getActivity(), getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

@@ -26,7 +26,7 @@ public class ReminderListFragment extends ListFragment {
     private ActionBar actionBar;
     private MyListAdapter adapter;
     private MyMultiChoiceModeListener multiChoiceModeListener;
-private ActionMode actionMode;
+
     // interface to communicate with other fragment through activity, fragment shouldn't know about parent activity
     public interface ReminderListListener {
         public void onItemClick(int position);
@@ -43,7 +43,7 @@ private ActionMode actionMode;
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-
+menu.findItem(R.id.action_delete).setVisible(false);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -113,22 +113,10 @@ private ActionMode actionMode;
                         "reminder_fr").addToBackStack(
                         "reminder_fr").commit();
                 return true;
-            case R.id.action_delete:
-               actionMode= getActivity().startActionMode(multiChoiceModeListener);
-
-                return true;
         }
         return false;
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if(actionMode!=null){
-            actionMode.finish();
-
-        }
-    }
 
     class MyMultiChoiceModeListener implements AbsListView.MultiChoiceModeListener {
         @Override

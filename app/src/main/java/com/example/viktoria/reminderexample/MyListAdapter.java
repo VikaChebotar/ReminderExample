@@ -2,6 +2,7 @@ package com.example.viktoria.reminderexample;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +37,7 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
     static class TaskHolder {
         TextView itemTitle;
         TextView itemTime;
-
+TextView itemIsElapsed;
     }
 
     @Override
@@ -59,6 +60,7 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
             holder = new TaskHolder();
             holder.itemTitle = (TextView) row.findViewById(R.id.titleItem);
             holder.itemTime = (TextView) row.findViewById(R.id.timeItem);
+            holder.itemIsElapsed = (TextView) row.findViewById(R.id.isElapsed);
             row.setTag(holder);
         } else {
             holder = (TaskHolder) row.getTag();
@@ -69,20 +71,28 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
             calendar.setTimeInMillis(item.getEventTime());
             calendar.set(Calendar.SECOND, 0);
             switch (item.getMinutesBeforeEventTime()) {
-                case 0:
+                case ON_TIME:
                     break;
-                case 1:
+                case ONE_MINUTE:
                     calendar.set(Calendar.MINUTE, calendar.get(Calendar.MINUTE) - 1);
                     break;
-                case 5:
+                case FIVE_MINUTES:
                     calendar.set(Calendar.MINUTE, calendar.get(Calendar.MINUTE) - 5);
                     break;
-                case 60:
+                case ONE_DAY:
                     calendar.set(Calendar.DAY_OF_MONTH, calendar.get(Calendar.DAY_OF_MONTH) - 1);
                     break;
             }
             Long reminderTime = calendar.getTimeInMillis();
             holder.itemTime.setText(MainActivity.dateFormat.format(reminderTime) + ", " + MainActivity.timeFormat.format(reminderTime));
+            calendar = Calendar.getInstance();
+
+            if (calendar.getTimeInMillis() > reminderTime) {
+              holder.itemIsElapsed.setText(context.getString(R.string.alarmElapsed));
+            }
+            else{
+                holder.itemIsElapsed.setText(context.getString(R.string.alarmSetted));
+            }
         }
         return row;
     }

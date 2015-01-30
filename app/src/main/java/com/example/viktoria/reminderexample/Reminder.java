@@ -11,24 +11,22 @@ public class Reminder implements Parcelable {
     private String title;
     private String description = "";
     private long eventTime;
-    private int minutesBeforeEventTime; //eventTime-minutesBeforeEventTime = time when to notify
+    private MinutesBeforeEventTime minutesBeforeEventTime=MinutesBeforeEventTime.ON_TIME; //eventTime-minutesBeforeEventTime = time when to notify
     private boolean isCalendarEventAdded;
-
-    private int requestCode;
 
     private Reminder(Parcel parcel) {
         title = parcel.readString();
         description = parcel.readString();
         eventTime = parcel.readLong();
-        minutesBeforeEventTime = parcel.readInt();
+        minutesBeforeEventTime =MinutesBeforeEventTime.getTypeByValue(parcel.readInt());
         isCalendarEventAdded = parcel.readByte() != 0; //isCalendarEventAdded== true if byte != 0
-        requestCode = parcel.readInt();
+
     }
 
     public Reminder() {
 
     }
-    public Reminder(String title, String description, long eventTime, int minutesBeforeEventTime, boolean isCalendarEventAdded) {
+    public Reminder(String title, String description, long eventTime,MinutesBeforeEventTime minutesBeforeEventTime, boolean isCalendarEventAdded) {
         this.title = title;
         this.description = description;
         this.eventTime = eventTime;
@@ -40,13 +38,6 @@ public class Reminder implements Parcelable {
         return id;
     }
 
-    public int getRequestCode() {
-        return requestCode;
-    }
-
-    public void setRequestCode(int requestCode) {
-        this.requestCode = requestCode;
-    }
 
     public void setId(int id) {
         this.id = id;
@@ -54,6 +45,14 @@ public class Reminder implements Parcelable {
 
     public String getTitle() {
         return title;
+    }
+
+    public MinutesBeforeEventTime getMinutesBeforeEventTime() {
+        return minutesBeforeEventTime;
+    }
+
+    public void setMinutesBeforeEventTime(MinutesBeforeEventTime minutesBeforeEventTime) {
+        this.minutesBeforeEventTime = minutesBeforeEventTime;
     }
 
     public void setTitle(String title) {
@@ -84,13 +83,6 @@ public class Reminder implements Parcelable {
         this.isCalendarEventAdded = isCalendarEventAdded;
     }
 
-    public int getMinutesBeforeEventTime() {
-        return minutesBeforeEventTime;
-    }
-
-    public void setMinutesBeforeEventTime(int minutesBeforeEventTime) {
-        this.minutesBeforeEventTime = minutesBeforeEventTime;
-    }
 
     @Override
     public int describeContents() {
@@ -102,9 +94,9 @@ public class Reminder implements Parcelable {
         parcel.writeString(title);
         parcel.writeString(description);
         parcel.writeLong(eventTime);
-        parcel.writeInt(minutesBeforeEventTime);
+        parcel.writeInt(minutesBeforeEventTime.getValue());
         parcel.writeByte((byte) (isCalendarEventAdded ? 1 : 0)); //if isCalendarEventAdded == true, byte == 1
-        parcel.writeInt(requestCode);
+
     }
 
     public static final Parcelable.Creator<Reminder> CREATOR = new Parcelable.Creator<Reminder>() {
