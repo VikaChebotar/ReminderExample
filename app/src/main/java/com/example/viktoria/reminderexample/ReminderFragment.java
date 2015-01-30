@@ -33,7 +33,6 @@ import android.widget.Toast;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Random;
 
 /**
  * A main screen of application, that allow to create reminder in two ways: with notification from this app or with use of local calendar
@@ -287,7 +286,7 @@ public class ReminderFragment extends Fragment {
 
 
     }
-
+//TODO
     public void setAlarmService(Reminder r) {
         Intent intentAlarm = new Intent(getActivity(), MyReceiver.class);
         //pass title and description to receiver and then to service to show them in notification

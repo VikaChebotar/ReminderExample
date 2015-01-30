@@ -13,7 +13,6 @@ import android.view.MenuInflater;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  * Created by viktoria on 28.01.15.
@@ -26,7 +25,8 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     public static final Format dateFormat = new SimpleDateFormat("dd MMMM yyyy");
     public static final Format timeFormat = new SimpleDateFormat("HH:mm");
     public static final String TAG = "REMINDER_LOGS";
-public static int LAST_ID =0;
+    public static int LAST_ID = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,7 +92,7 @@ public static int LAST_ID =0;
     @Override
     public void onReminderUpdate(Reminder r) {
         DatabaseHandler db = new DatabaseHandler(this);
-        db.updateReminder(r);
+        int rowsUpdated = db.updateReminder(r);
         for (int i = 0; i < reminderItems.size(); i++) {
             if (reminderItems.get(i).equals(r)) {
                 reminderItems.set(i, r);
@@ -101,8 +101,9 @@ public static int LAST_ID =0;
         }
         ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesUpdated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-
+        if (rowsUpdated > 0) {
+            Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesUpdated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+        }
     }
 
     @Override
@@ -113,7 +114,7 @@ public static int LAST_ID =0;
         ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
         Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesDeleted));
-        Log.e(MainActivity.TAG,"amount of reminders:"+ db.getRemindersCount());
+        Log.e(MainActivity.TAG, "amount of reminders:" + db.getRemindersCount());
         if (r.isCalendarEventAdded()) {
 
         } else {
@@ -140,7 +141,7 @@ public static int LAST_ID =0;
                 alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
             }
         }
-        Log.e(MainActivity.TAG,"amount of reminders:"+ db.getRemindersCount());
+        Log.e(MainActivity.TAG, "amount of reminders:" + db.getRemindersCount());
     }
 
 }

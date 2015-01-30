@@ -40,7 +40,7 @@ public class MyNotificationService extends Service  {
                         .setSmallIcon(R.drawable.ic_launcher)
                         .setContentTitle(title)
                         .setContentText(descr).setAutoCancel(true).setDefaults(Notification.DEFAULT_ALL);
-        Intent intent = new Intent(this, ReminderFragment.class);
+        Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
         mBuilder.setContentIntent(pIntent);
         nm.notify(1, mBuilder.getNotification());
