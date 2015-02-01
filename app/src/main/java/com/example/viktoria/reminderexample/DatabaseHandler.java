@@ -30,7 +30,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String KEY_EVENT_TIME = "eventTime";
     private static final String KEY_MINUTES_BET = "minutesBeforeEventTime";
     private static final String KEY_IS_CALENDAREVENT_ADDED = "isCalendarEventAdded";
-
+    private static final String KEY_EVENT_ID = "eventId";
+    private static final String KEY_REMINDER_ID = "reminderId";
     public DatabaseHandler(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -40,7 +41,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABLE_REMINDER + "("
                 + KEY_ID + " INTEGER PRIMARY KEY," + KEY_TITLE + " TEXT,"
-                + KEY_DESCR + " TEXT," + KEY_EVENT_TIME + " INTEGER," + KEY_MINUTES_BET + " INTEGER," + KEY_IS_CALENDAREVENT_ADDED + " INTEGER"+ ")";
+                + KEY_DESCR + " TEXT," + KEY_EVENT_TIME
+                + " INTEGER," + KEY_MINUTES_BET + " INTEGER," + KEY_IS_CALENDAREVENT_ADDED +
+                " INTEGER," + KEY_EVENT_ID + " INTEGER," +KEY_REMINDER_ID+" INTEGER"+ ")";
         db.execSQL(CREATE_CONTACTS_TABLE);
     }
 
@@ -55,7 +58,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
     // Adding new reminder
-    public void addReminder(Reminder r) {
+    public Reminder addReminder(Reminder r) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_TITLE, r.getTitle());
@@ -64,10 +67,13 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_MINUTES_BET, r.getMinutesBeforeEventTime().getValue());
         int isCalendarEventAdded = r.isCalendarEventAdded() ? 1 : 0;
         values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
-
+        values.put(KEY_EVENT_ID, r.getEventId());
+        values.put(KEY_REMINDER_ID, r.getReminderId());
         // Inserting Row
-        db.insert(TABLE_REMINDER, null, values);
+        int id = (int) db.insert(TABLE_REMINDER, null, values);
+        r.setId(id);
         db.close(); // Closing database connection
+        return r;
     }
 
     public List<Reminder> getAllReminders() {
@@ -86,7 +92,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 r.setEventTime(Long.parseLong(cursor.getString(3)));
                 r.setMinutesBeforeEventTime(MinutesBeforeEventTime.getTypeByValue(Integer.parseInt(cursor.getString(4))));
                 r.setCalendarEventAdded(Integer.parseInt(cursor.getString(5)) != 0);
-
+                r.setEventId(Integer.parseInt(cursor.getString(6)));
+                r.setReminderId(Integer.parseInt(cursor.getString(7)));
                 // Adding reminder to list
                 reminderList.add(r);
                 cursor.moveToNext();
@@ -113,11 +120,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_MINUTES_BET, r.getMinutesBeforeEventTime().getValue());
         int isCalendarEventAdded = r.isCalendarEventAdded() ? 1 : 0;
         values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
+        values.put(KEY_EVENT_ID, r.getEventId());
 
+        values.put(KEY_REMINDER_ID, r.getReminderId());
         // updating row
         return db.update(TABLE_REMINDER, values, KEY_ID + " = ?",
                 new String[]{String.valueOf(r.getId())});
     }
+
     // Getting reminders Count
     public int getRemindersCount() {
         String countQuery = "SELECT  * FROM " + TABLE_REMINDER;

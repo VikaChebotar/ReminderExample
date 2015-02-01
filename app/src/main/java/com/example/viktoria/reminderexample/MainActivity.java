@@ -3,12 +3,19 @@ package com.example.viktoria.reminderexample;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.AsyncQueryHandler;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.widget.Toast;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -81,9 +88,9 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     @Override
     public void onReminderCreated(Reminder r) {
         DatabaseHandler db = new DatabaseHandler(this);
+        r = db.addReminder(r);
         reminderItems.add(r);
-        r.setId(reminderItems.size() - 1);
-        db.addReminder(r);
+        setReminder(r);
         ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
         Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesCreated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
@@ -99,6 +106,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                 break;
             }
         }
+        setReminder(r);
         ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
         if (rowsUpdated > 0) {
@@ -116,13 +124,9 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesDeleted));
         Log.e(MainActivity.TAG, "amount of reminders:" + db.getRemindersCount());
         if (r.isCalendarEventAdded()) {
-
+            deleteEventFromCalendarProvider(r);
         } else {
-            Intent intentAlarm = new Intent(this, MyReceiver.class);
-            intentAlarm.putExtra(getResources().getString(R.string.titleVarIntent), r.getTitle());
-            intentAlarm.putExtra(getResources().getString(R.string.descrVarIntent), r.getDescription());
-            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+            cancelAlarmManagerReminder(r);
         }
     }
 
@@ -134,14 +138,144 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
             reminderItems.remove(r);
             Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesDeleted));
             if (r.isCalendarEventAdded()) {
-
+                deleteEventFromCalendarProvider(r);
             } else {
-                Intent intentAlarm = new Intent(this, MyReceiver.class);
-                AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+                cancelAlarmManagerReminder(r);
             }
         }
         Log.e(MainActivity.TAG, "amount of reminders:" + db.getRemindersCount());
     }
+
+    /**
+     * depends on checkbox:
+     * inserts event with reminder in local calendar
+     * or sets service from app that will show notification in reminderTime
+     */
+    public void setReminder(Reminder r) {
+        if (r.isCalendarEventAdded()) {
+            cancelAlarmManagerReminder(r);
+            insertEventToCalendarProvider(r);
+        } else {
+            if(r.getEventId()!=0){
+                deleteEventFromCalendarProvider(r);
+            }
+            setAlarmService(r);
+        }
+    }
+
+    public void cancelAlarmManagerReminder(Reminder r) {
+            Intent intentAlarm = new Intent(this, MyReceiver.class);
+            intentAlarm.putExtra(getResources().getString(R.string.titleVarIntent), r.getTitle());
+            intentAlarm.putExtra(getResources().getString(R.string.descrVarIntent), r.getDescription());
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+    }
+
+    public void insertEventToCalendarProvider(final Reminder r) {
+        final ContentResolver cr = getContentResolver();
+        ContentValues calEvent = new ContentValues();
+        calEvent.put(CalendarContract.Events.CALENDAR_ID, 1); //default calendar
+        calEvent.put(CalendarContract.Events.TITLE, r.getTitle());
+        calEvent.put(CalendarContract.Events.DESCRIPTION, r.getDescription());
+        calEvent.put(CalendarContract.Events.DTSTART, r.getEventTime());
+        calEvent.put(CalendarContract.Events.DTEND, r.getEventTime());
+        calEvent.put(CalendarContract.Events.HAS_ALARM, 1);
+        calEvent.put(CalendarContract.Events.EVENT_TIMEZONE, CalendarContract.Calendars.CALENDAR_TIME_ZONE);
+        if (r.getEventId() == 0) {
+            //inserts and updates should be done in an asynchronous thread
+            AsyncQueryHandler handler =
+                    new AsyncQueryHandler(cr) {
+                        @Override
+                        protected void onInsertComplete(int token, Object cookie, Uri uri) {
+                            super.onInsertComplete(token, cookie, uri);
+                            //get id of event
+                            final int eventId = Integer.parseInt(uri.getLastPathSegment());
+
+                            ContentValues reminder = new ContentValues();
+                            reminder.put(CalendarContract.Reminders.EVENT_ID, eventId);
+                            reminder.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
+                            reminder.put(CalendarContract.Reminders.MINUTES, r.getMinutesBeforeEventTime().getValue());
+                            //Uri uri2 = cr.insert(CalendarContract.Reminders.CONTENT_URI, reminder);
+                            AsyncQueryHandler handler2 =
+                                    new AsyncQueryHandler(cr) {
+                                        @Override
+                                        protected void onInsertComplete(int token, Object cookie, Uri uri) {
+                                            super.onInsertComplete(token, cookie, uri);
+                                            int reminderId = Integer.parseInt(uri.getLastPathSegment());
+                                            r.setEventId(eventId);
+                                            r.setReminderId(reminderId);
+                                            DatabaseHandler db = new DatabaseHandler(MainActivity.this);
+                                            db.updateReminder(r);
+                                            for (int i = 0; i < reminderItems.size(); i++) {
+                                                if (reminderItems.get(i).equals(r)) {
+                                                    reminderItems.set(i, r);
+                                                    break;
+                                                }
+                                            }
+                                            Toast.makeText(MainActivity.this, getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
+                                        }
+                                    };
+                            handler2.startInsert(-1, null, CalendarContract.Reminders.CONTENT_URI, reminder);
+                        }
+                    };
+
+            handler.startInsert(-1, null, CalendarContract.Events.CONTENT_URI, calEvent);
+
+        } else {
+            //inserts and updates should be done in an asynchronous thread
+            AsyncQueryHandler handler =
+                    new AsyncQueryHandler(cr) {
+
+                        @Override
+                        protected void onUpdateComplete(int token, Object cookie, int result) {
+                            super.onUpdateComplete(token, cookie, result);
+                            if (result > 0) {
+                                ContentValues reminder = new ContentValues();
+                                reminder.put(CalendarContract.Reminders.EVENT_ID, r.getEventId());
+                                reminder.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
+                                reminder.put(CalendarContract.Reminders.MINUTES, r.getMinutesBeforeEventTime().getValue());
+                                AsyncQueryHandler handler2 =
+                                        new AsyncQueryHandler(cr) {
+                                            @Override
+                                            protected void onUpdateComplete(int token, Object cookie, int result) {
+                                                super.onUpdateComplete(token, cookie, result);
+                                                if (result > 0) {
+                                                    Toast.makeText(MainActivity.this, getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
+                                                }
+                                            }
+                                        };
+                                handler2.startUpdate(-1, null, ContentUris.withAppendedId(CalendarContract.Reminders.CONTENT_URI, r.getReminderId()), reminder,
+                                        null, null);
+                            }
+                        }
+                    };
+            handler.startUpdate(-1, null, ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, r.getEventId()), calEvent, null, null);
+        }
+
+
+    }
+
+    public void deleteEventFromCalendarProvider(Reminder r) {
+        ContentResolver cr = getContentResolver();
+        ContentValues values = new ContentValues();
+        Uri deleteUri = null;
+        deleteUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, r.getEventId());
+        AsyncQueryHandler handler =
+                new AsyncQueryHandler(cr) {
+                };
+        handler.startDelete(-1, null, deleteUri, null, null);
+    }
+
+    public void setAlarmService(Reminder r) {
+
+        Intent intentAlarm = new Intent(MainActivity.this, MyReceiver.class);
+        //pass title and description to receiver and then to service to show them in notification
+        intentAlarm.putExtra(getString(R.string.reminderIntent), r);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000, PendingIntent.getBroadcast(MainActivity.this
+                , r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+        Toast.makeText(MainActivity.this, getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
+    }
+
 
 }

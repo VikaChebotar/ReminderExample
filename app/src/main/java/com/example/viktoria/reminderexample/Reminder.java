@@ -11,22 +11,27 @@ public class Reminder implements Parcelable {
     private String title;
     private String description = "";
     private long eventTime;
-    private MinutesBeforeEventTime minutesBeforeEventTime=MinutesBeforeEventTime.ON_TIME; //eventTime-minutesBeforeEventTime = time when to notify
+    private MinutesBeforeEventTime minutesBeforeEventTime = MinutesBeforeEventTime.ON_TIME; //eventTime-minutesBeforeEventTime = time when to notify
     private boolean isCalendarEventAdded;
+    private int eventId;
+    private int reminderId;
 
     private Reminder(Parcel parcel) {
+        id = parcel.readInt();
         title = parcel.readString();
         description = parcel.readString();
         eventTime = parcel.readLong();
-        minutesBeforeEventTime =MinutesBeforeEventTime.getTypeByValue(parcel.readInt());
+        minutesBeforeEventTime = MinutesBeforeEventTime.getTypeByValue(parcel.readInt());
         isCalendarEventAdded = parcel.readByte() != 0; //isCalendarEventAdded== true if byte != 0
-
+        eventId = parcel.readInt();
+        reminderId = parcel.readInt();
     }
 
     public Reminder() {
 
     }
-    public Reminder(String title, String description, long eventTime,MinutesBeforeEventTime minutesBeforeEventTime, boolean isCalendarEventAdded) {
+
+    public Reminder(String title, String description, long eventTime, MinutesBeforeEventTime minutesBeforeEventTime, boolean isCalendarEventAdded) {
         this.title = title;
         this.description = description;
         this.eventTime = eventTime;
@@ -38,6 +43,22 @@ public class Reminder implements Parcelable {
         return id;
     }
 
+
+    public int getReminderId() {
+        return reminderId;
+    }
+
+    public void setReminderId(int reminderId) {
+        this.reminderId = reminderId;
+    }
+
+    public int getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(int eventId) {
+        this.eventId = eventId;
+    }
 
     public void setId(int id) {
         this.id = id;
@@ -91,12 +112,14 @@ public class Reminder implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel parcel, int flags) {
+        parcel.writeInt(id);
         parcel.writeString(title);
         parcel.writeString(description);
         parcel.writeLong(eventTime);
         parcel.writeInt(minutesBeforeEventTime.getValue());
         parcel.writeByte((byte) (isCalendarEventAdded ? 1 : 0)); //if isCalendarEventAdded == true, byte == 1
-
+        parcel.writeInt(eventId);
+        parcel.writeInt(reminderId);
     }
 
     public static final Parcelable.Creator<Reminder> CREATOR = new Parcelable.Creator<Reminder>() {

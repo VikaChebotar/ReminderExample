@@ -206,18 +206,36 @@ public class ReminderFragment extends Fragment {
         outState.putParcelable(getActivity().getString(R.string.reminderIntent), r);
     }
 
-    /**
-     * Sets reminder depends on input data
-     */
-    public void setReminder(Reminder r) {
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                getActivity().getFragmentManager().popBackStack();
+                return true;
+            case R.id.action_delete:
+                mCallback.onReminderDelete(r);
+                return true;
+            case R.id.action_accept:
+                //it's not allowed to make event without name
+                if (titleET.getText().toString() == null || titleET.getText().toString().isEmpty()) {
+                    Toast.makeText(getActivity(), getString(R.string.toastNoTitle), Toast.LENGTH_SHORT).show();
+                } else {
+                    initReminder(r);
+                    if (editMode) {
+                        mCallback.onReminderUpdate(r);
+                    } else {
+                        mCallback.onReminderCreated(r);
+                    }
+                }
+                return true;
+        }
+        return false;
+    }
+
+    private void initReminder(Reminder r){
         r.setTitle(titleET.getText().toString());
         r.setDescription(descrET.getText().toString());
-        if(!editMode){
-            r.setId(MainActivity.LAST_ID);
-            MainActivity.LAST_ID++;
-        }
-
         r.setEventTime(calendar.getTimeInMillis());
         switch (remindTimeSpinner.getSelectedItemPosition()) {
             case 0:
@@ -234,93 +252,5 @@ public class ReminderFragment extends Fragment {
                 break;
         }
         r.setCalendarEventAdded(checkBox.isChecked());
-        /*
-        depends on checkbox:
-        inserts event with reminder in local calendar
-        or sets service from app that will show notification in reminderTime
-         */
-        if (r.isCalendarEventAdded()) {
-            insertEventToCalendarProvider(r);
-        } else {
-            setAlarmService(r);
-        }
-    }
-
-
-    public void insertEventToCalendarProvider(final Reminder r) {
-        final ContentResolver cr = getActivity().getContentResolver();
-        ContentValues calEvent = new ContentValues();
-        calEvent.put(CalendarContract.Events.CALENDAR_ID, 1); //default calendar
-        calEvent.put(CalendarContract.Events.TITLE, r.getTitle());
-        calEvent.put(CalendarContract.Events.DESCRIPTION, r.getDescription());
-        calEvent.put(CalendarContract.Events.DTSTART, r.getEventTime());
-        calEvent.put(CalendarContract.Events.DTEND, r.getEventTime());
-        calEvent.put(CalendarContract.Events.HAS_ALARM, 1);
-        calEvent.put(CalendarContract.Events.EVENT_TIMEZONE, CalendarContract.Calendars.CALENDAR_TIME_ZONE);
-//inserts and updates should be done in an asynchronous thread
-        AsyncQueryHandler handler =
-                new AsyncQueryHandler(cr) {
-                    @Override
-                    protected void onInsertComplete(int token, Object cookie, Uri uri) {
-                        super.onInsertComplete(token, cookie, uri);
-                        //get id of event
-                        int id = Integer.parseInt(uri.getLastPathSegment());
-                        ContentValues reminder = new ContentValues();
-                        reminder.put(CalendarContract.Reminders.EVENT_ID, id);
-                        reminder.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
-                        reminder.put(CalendarContract.Reminders.MINUTES, r.getMinutesBeforeEventTime().getValue());
-                        //Uri uri2 = cr.insert(CalendarContract.Reminders.CONTENT_URI, reminder);
-                        AsyncQueryHandler handler =
-                                new AsyncQueryHandler(cr) {
-                                    @Override
-                                    protected void onInsertComplete(int token, Object cookie, Uri uri) {
-                                        super.onInsertComplete(token, cookie, uri);
-                                        Toast.makeText(getActivity(), getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
-                                    }
-                                };
-                        handler.startInsert(-1, null, CalendarContract.Reminders.CONTENT_URI, reminder);
-                    }
-                };
-        handler.startInsert(-1, null, CalendarContract.Events.CONTENT_URI, calEvent);
-        //  Uri uri = cr.insert(CalendarContract.Events.CONTENT_URI, calEvent);
-
-
-    }
-//TODO
-    public void setAlarmService(Reminder r) {
-        Intent intentAlarm = new Intent(getActivity(), MyReceiver.class);
-        //pass title and description to receiver and then to service to show them in notification
-        intentAlarm.putExtra(getResources().getString(R.string.titleVarIntent), r.getTitle());
-        intentAlarm.putExtra(getResources().getString(R.string.descrVarIntent), r.getDescription());
-        AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000, PendingIntent.getBroadcast(getActivity(), r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
-        Toast.makeText(getActivity(), getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                getActivity().getFragmentManager().popBackStack();
-                return true;
-            case R.id.action_delete:
-                mCallback.onReminderDelete(r);
-                return true;
-            case R.id.action_accept:
-                //it's not allowed to make event without name
-                if (titleET.getText().toString() == null || titleET.getText().toString().isEmpty()) {
-                    Toast.makeText(getActivity(), getString(R.string.toastNoTitle), Toast.LENGTH_SHORT).show();
-
-                } else {
-                    setReminder(r);
-                    if (editMode) {
-                        mCallback.onReminderUpdate(r);
-                    } else {
-                        mCallback.onReminderCreated(r);
-                    }
-                }
-                return true;
-        }
-        return false;
     }
 }

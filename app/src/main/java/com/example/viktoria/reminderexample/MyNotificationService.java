@@ -22,28 +22,26 @@ public class MyNotificationService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String titleVarName = getResources().getString(R.string.titleVarIntent);
-        String descrVarName = getResources().getString(R.string.descrVarIntent);
-        sendNotif(intent.getStringExtra(titleVarName), intent.getStringExtra(descrVarName));
+        String reminderVarName = getResources().getString(R.string.reminderIntent);
+        sendNotif((Reminder)intent.getParcelableExtra(reminderVarName));
 
         return START_REDELIVER_INTENT;
     }
 
     /**
      * Build notification, than send it to NotificationManager to show it.
-     * @param title text to show as Content Title in notification
-     * @param descr text to show as Content Description in notification
+
      */
-   public void sendNotif(String title, String descr) {
+   public void sendNotif(Reminder r) {
         Notification.Builder mBuilder =
                 new Notification.Builder(this)
                         .setSmallIcon(R.drawable.ic_launcher)
-                        .setContentTitle(title)
-                        .setContentText(descr).setAutoCancel(true).setDefaults(Notification.DEFAULT_ALL);
+                        .setContentTitle(r.getTitle())
+                        .setContentText(r.getDescription()).setAutoCancel(true).setDefaults(Notification.DEFAULT_ALL);
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
         mBuilder.setContentIntent(pIntent);
-        nm.notify(1, mBuilder.getNotification());
+        nm.notify(r.getId(), mBuilder.getNotification());
     }
 
     public IBinder onBind(Intent arg0) {
