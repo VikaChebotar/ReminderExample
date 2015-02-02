@@ -24,13 +24,12 @@ public class MyNotificationService extends Service  {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String reminderVarName = getResources().getString(R.string.reminderIntent);
         sendNotif((Reminder)intent.getParcelableExtra(reminderVarName));
-
         return START_REDELIVER_INTENT;
     }
 
     /**
      * Build notification, than send it to NotificationManager to show it.
-
+     * @param r Reminder object that is represented by notification
      */
    public void sendNotif(Reminder r) {
         Notification.Builder mBuilder =
@@ -41,6 +40,7 @@ public class MyNotificationService extends Service  {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
         mBuilder.setContentIntent(pIntent);
+       //r.getId() - unique id to create one more notification or update existing
         nm.notify(r.getId(), mBuilder.getNotification());
     }
 

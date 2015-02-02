@@ -22,7 +22,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 /**
- * Created by viktoria on 28.01.15.
+ * Activity that consist of 2 screens - list of reminders and detail reminder screen.
+ * Activity show all existing reminders, allow to add new, edit or delete reminder. List of reminders are saved in SQLite db.
+ * Implements ReminderListFragment.ReminderListListener and ReminderFragment.OnReminderChangeListener to enable communication between fragments and activity.
  */
 public class MainActivity extends Activity implements ReminderListFragment.ReminderListListener, ReminderFragment.OnReminderChangeListener {
     private ArrayList<Reminder> reminderItems;
@@ -31,8 +33,11 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      */
     public static final Format dateFormat = new SimpleDateFormat("dd MMMM yyyy");
     public static final Format timeFormat = new SimpleDateFormat("HH:mm");
+    /**
+     * tag for all logs in app
+     */
     public static final String TAG = "REMINDER_LOGS";
-    public static int LAST_ID = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +50,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
             args.putParcelableArrayList(getString(R.string.reminderListIntent), reminderItems);
             list_fr.setArguments(args);
             getFragmentManager().beginTransaction().replace(R.id.content_frame, list_fr,
-                    "list_fr").commit(); //set ReminderListFragment as visible one
+                    getString(R.string.listFr)).commit(); //set ReminderListFragment as visible one
         } else {
             reminderItems = savedInstanceState.getParcelableArrayList(getString(R.string.reminderListIntent)); //retain list from saved state, no need to go to db again
         }
@@ -59,9 +64,13 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         return super.onCreateOptionsMenu(menu);
     }
 
-    //get all reminders from db
+    /**
+     * Get all reminders from db
+     *
+     * @return list of reminders
+     */
     private ArrayList<Reminder> retrieveReminders() {
-        DatabaseHandler db = new DatabaseHandler(this);
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
         reminderItems = (ArrayList<Reminder>) db.getAllReminders();
         return reminderItems;
     }
@@ -72,7 +81,11 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         outState.putParcelableArrayList(getString(R.string.reminderListIntent), reminderItems);
     }
 
-
+    /**
+     * Called when reminder item in list is clicked. Open ReminderFragment to view and edit this reminder.
+     *
+     * @param position position of clicked item
+     */
     @Override
     public void onItemClick(int position) {
         ReminderFragment reminderFragment = new ReminderFragment();
@@ -80,25 +93,38 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         arg.putParcelable(getString(R.string.reminderIntent), reminderItems.get(position));
         reminderFragment.setArguments(arg);
         getFragmentManager().beginTransaction().replace(R.id.content_frame, reminderFragment,
-                "reminder_fr").addToBackStack(
-                "reminder_fr").commit();
+                getString(R.string.reminderFr)).addToBackStack(
+                getString(R.string.reminderFr)).commit();
     }
 
-
+    /**
+     * Called when new reminder was created. Saves it to db, add it to list, call setReminder() and opens ReminderListFragment.
+     *
+     * @param r new reminder
+     */
     @Override
     public void onReminderCreated(Reminder r) {
-        DatabaseHandler db = new DatabaseHandler(this);
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
         r = db.addReminder(r);
         reminderItems.add(r);
         setReminder(r);
-        ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
+        ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesCreated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+        StringBuilder sb = new StringBuilder(getString(R.string.logMes));
+        sb.append(" ").append(r.getTitle()).append(getString(R.string.logMesCreated)).append(" ");
+        sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+        sb.append(", ").append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+        Log.e(MainActivity.TAG, sb.toString());
     }
 
+    /**
+     * Called when updating reminder. Update it in db, update in list, reschedule alarm by setReminder() and opens ReminderListFragment.
+     *
+     * @param r updated reminder
+     */
     @Override
     public void onReminderUpdate(Reminder r) {
-        DatabaseHandler db = new DatabaseHandler(this);
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
         int rowsUpdated = db.updateReminder(r);
         for (int i = 0; i < reminderItems.size(); i++) {
             if (reminderItems.get(i).equals(r)) {
@@ -107,22 +133,32 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
             }
         }
         setReminder(r);
-        ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
+        ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
         if (rowsUpdated > 0) {
-            Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesUpdated) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+            StringBuilder sb = new StringBuilder(getString(R.string.logMes));
+            sb.append(" ").append(r.getTitle()).append(getString(R.string.logMesUpdated)).append(" ");
+            sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+            sb.append(", ").append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+
+            Log.e(MainActivity.TAG, sb.toString());
         }
     }
 
+    /**
+     * Called when deleting reminder. Delete from db, delete from list, cancel reminder and opens ReminderListFragment.
+     *
+     * @param r reminder to delete
+     */
     @Override
     public void onReminderDelete(Reminder r) {
-        DatabaseHandler db = new DatabaseHandler(this);
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
         db.deleteReminder(r);
         reminderItems.remove(r);
-        ((ReminderListFragment) getFragmentManager().findFragmentByTag("list_fr")).setReminderItems(reminderItems);
+        ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesDeleted));
-        Log.e(MainActivity.TAG, "amount of reminders:" + db.getRemindersCount());
+        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() +" "+getString(R.string.logMesDeleted));
+        Log.e(MainActivity.TAG, getString(R.string.amountOfReminders) + db.getRemindersCount());
         if (r.isCalendarEventAdded()) {
             deleteEventFromCalendarProvider(r);
         } else {
@@ -130,47 +166,111 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         }
     }
 
+    /**
+     * Called when deleting batch of reminders. Delete them from db, delete from list, cancel reminders and opens ReminderListFragment.
+     *
+     * @param reminders list of reminder to delete
+     */
     @Override
     public void onReminderBatchDelete(ArrayList<Reminder> reminders) {
-        DatabaseHandler db = new DatabaseHandler(this);
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
         for (Reminder r : reminders) {
             db.deleteReminder(r);
             reminderItems.remove(r);
-            Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " (" + r.getId() + ") " + getString(R.string.logMesDeleted));
+            Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() +" "+ getString(R.string.logMesDeleted));
             if (r.isCalendarEventAdded()) {
                 deleteEventFromCalendarProvider(r);
             } else {
                 cancelAlarmManagerReminder(r);
             }
         }
-        Log.e(MainActivity.TAG, "amount of reminders:" + db.getRemindersCount());
+        Log.e(MainActivity.TAG, getString(R.string.amountOfReminders) + db.getRemindersCount());
     }
 
     /**
-     * depends on checkbox:
+     * Open empty ReminderFragment.
+     */
+    @Override
+    public void onReminderCreateNew() {
+        getFragmentManager().beginTransaction().replace(R.id.content_frame, new ReminderFragment(),
+                getString(R.string.reminderFr)).addToBackStack(
+                getString(R.string.reminderFr)).commit();
+    }
+
+    /**
+     * Depends on checkbox:
      * inserts event with reminder in local calendar
      * or sets service from app that will show notification in reminderTime
+     *
+     * @param r reminder to set alarm
      */
     public void setReminder(Reminder r) {
         if (r.isCalendarEventAdded()) {
             cancelAlarmManagerReminder(r);
             insertEventToCalendarProvider(r);
         } else {
-            if(r.getEventId()!=0){
+            if (r.getEventId() != 0) {
                 deleteEventFromCalendarProvider(r);
             }
             setAlarmService(r);
         }
     }
 
+    /**
+     * Cancel reminder notification setted by AlarmManager
+     *
+     * @param r reminder to cancel
+     */
     public void cancelAlarmManagerReminder(Reminder r) {
-            Intent intentAlarm = new Intent(this, MyReceiver.class);
-            intentAlarm.putExtra(getResources().getString(R.string.titleVarIntent), r.getTitle());
-            intentAlarm.putExtra(getResources().getString(R.string.descrVarIntent), r.getDescription());
-            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+        Intent intentAlarm = new Intent(this, MyReceiver.class);
+        intentAlarm.putExtra(getString(R.string.reminderIntent), r);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
     }
 
+    /**
+     * Cancel reminder that was added to CalendarProvider
+     *
+     * @param r reminder to cancel
+     */
+    public void deleteEventFromCalendarProvider(Reminder r) {
+        ContentResolver cr = getContentResolver();
+        ContentValues values = new ContentValues();
+        Uri deleteUri = null;
+        deleteUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, r.getEventId());
+        AsyncQueryHandler handler =
+                new AsyncQueryHandler(cr) {
+                };
+        handler.startDelete(-1, null, deleteUri, null, null);
+    }
+
+    /**
+     * Set alarm service to show notification
+     *
+     * @param r reminder to set as alarm
+     */
+    public void setAlarmService(Reminder r) {
+
+        Intent intentAlarm = new Intent(MainActivity.this, MyReceiver.class);
+        intentAlarm.putExtra(getString(R.string.reminderIntent), r);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        long triggerAtMillis = r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000;
+        PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this
+                , r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi);
+        StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
+        sb.append(" ");
+        sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+        sb.append(", ");
+        sb.append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+        Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Insert event and reminder to CalendarProvider.
+     *
+     * @param r reminder to add
+     */
     public void insertEventToCalendarProvider(final Reminder r) {
         final ContentResolver cr = getContentResolver();
         ContentValues calEvent = new ContentValues();
@@ -181,6 +281,14 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         calEvent.put(CalendarContract.Events.DTEND, r.getEventTime());
         calEvent.put(CalendarContract.Events.HAS_ALARM, 1);
         calEvent.put(CalendarContract.Events.EVENT_TIMEZONE, CalendarContract.Calendars.CALENDAR_TIME_ZONE);
+       /*
+         if (r.getEventId() == 0) {
+         create new row in tables
+         }
+         else{
+         update already existing rows by eventId and reminderId
+         }
+        */
         if (r.getEventId() == 0) {
             //inserts and updates should be done in an asynchronous thread
             AsyncQueryHandler handler =
@@ -204,7 +312,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                                             int reminderId = Integer.parseInt(uri.getLastPathSegment());
                                             r.setEventId(eventId);
                                             r.setReminderId(reminderId);
-                                            DatabaseHandler db = new DatabaseHandler(MainActivity.this);
+                                            DatabaseHandler db = DatabaseHandler.getInstance(MainActivity.this);
                                             db.updateReminder(r);
                                             for (int i = 0; i < reminderItems.size(); i++) {
                                                 if (reminderItems.get(i).equals(r)) {
@@ -212,7 +320,12 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                                                     break;
                                                 }
                                             }
-                                            Toast.makeText(MainActivity.this, getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
+                                            StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
+                                            sb.append(" ");
+                                            sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                                            sb.append(", ");
+                                            sb.append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                                            Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
                                         }
                                     };
                             handler2.startInsert(-1, null, CalendarContract.Reminders.CONTENT_URI, reminder);
@@ -240,7 +353,12 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                                             protected void onUpdateComplete(int token, Object cookie, int result) {
                                                 super.onUpdateComplete(token, cookie, result);
                                                 if (result > 0) {
-                                                    Toast.makeText(MainActivity.this, getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
+                                                    StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
+                                                    sb.append(" ");
+                                                    sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                                                    sb.append(", ");
+                                                    sb.append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                                                    Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
                                                 }
                                             }
                                         };
@@ -253,28 +371,6 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         }
 
 
-    }
-
-    public void deleteEventFromCalendarProvider(Reminder r) {
-        ContentResolver cr = getContentResolver();
-        ContentValues values = new ContentValues();
-        Uri deleteUri = null;
-        deleteUri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, r.getEventId());
-        AsyncQueryHandler handler =
-                new AsyncQueryHandler(cr) {
-                };
-        handler.startDelete(-1, null, deleteUri, null, null);
-    }
-
-    public void setAlarmService(Reminder r) {
-
-        Intent intentAlarm = new Intent(MainActivity.this, MyReceiver.class);
-        //pass title and description to receiver and then to service to show them in notification
-        intentAlarm.putExtra(getString(R.string.reminderIntent), r);
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000, PendingIntent.getBroadcast(MainActivity.this
-                , r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
-        Toast.makeText(MainActivity.this, getString(R.string.toastReminderSetTo) + " " + dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000) + ", " + timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000), Toast.LENGTH_SHORT).show();
     }
 
 

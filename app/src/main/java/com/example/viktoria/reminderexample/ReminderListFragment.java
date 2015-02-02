@@ -18,7 +18,7 @@ import android.widget.ListView;
 import java.util.ArrayList;
 
 /**
- * Created by viktoria on 27.01.15.
+ * Show list of reminders. Allow to add new reminder, select multiple reminders by long click to delete them.
  */
 public class ReminderListFragment extends ListFragment {
     private ArrayList<Reminder> reminderItems;
@@ -32,6 +32,8 @@ public class ReminderListFragment extends ListFragment {
         public void onItemClick(int position);
 
         public void onReminderBatchDelete(ArrayList<Reminder> reminders);
+
+        public void onReminderCreateNew();
     }
 
     @Override
@@ -43,7 +45,7 @@ public class ReminderListFragment extends ListFragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-menu.findItem(R.id.action_delete).setVisible(false);
+        menu.findItem(R.id.action_delete).setVisible(false);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -64,7 +66,7 @@ menu.findItem(R.id.action_delete).setVisible(false);
 
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
-                    + " must implement OnItemClickListener");
+                    +" "+ getActivity().getString(R.string.castExc)+" "+ReminderListFragment.class);
         }
     }
 
@@ -97,7 +99,12 @@ menu.findItem(R.id.action_delete).setVisible(false);
         setEmptyText(getResources().getString(R.string.no_items)); //this is to set message if reminderItems.size==0
     }
 
-    public void setReminderItems(ArrayList<Reminder> reminderItems) {
+    /**
+     * Set new list of reminders, if they changed
+     *
+     * @param reminderItems new list
+     */
+    protected void setReminderItems(ArrayList<Reminder> reminderItems) {
         this.reminderItems = reminderItems;
     }
 
@@ -109,15 +116,15 @@ menu.findItem(R.id.action_delete).setVisible(false);
                 getActivity().getFragmentManager().popBackStack();
                 return true;
             case R.id.action_add:
-                getActivity().getFragmentManager().beginTransaction().replace(R.id.content_frame, new ReminderFragment(),
-                        "reminder_fr").addToBackStack(
-                        "reminder_fr").commit();
+                mCallback.onReminderCreateNew();
                 return true;
         }
         return false;
     }
 
-
+    /**
+     * Implementation of MultiChoiceModeListener, that allow to select multiple items in ListView by long click and then delete them.
+     */
     class MyMultiChoiceModeListener implements AbsListView.MultiChoiceModeListener {
         @Override
         public void onItemCheckedStateChanged(ActionMode mode,

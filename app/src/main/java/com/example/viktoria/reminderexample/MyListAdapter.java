@@ -2,7 +2,6 @@ package com.example.viktoria.reminderexample;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +13,7 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * Created by viktoria on 27.01.15.
+ * Adapter for ListView of Reminders in ReminderFragment
  */
 public class MyListAdapter extends ArrayAdapter<Reminder> {
     private Context context;
@@ -37,7 +36,7 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
     static class TaskHolder {
         TextView itemTitle;
         TextView itemTime;
-TextView itemIsElapsed;
+        TextView itemIsElapsed;
     }
 
     @Override
@@ -68,6 +67,7 @@ TextView itemIsElapsed;
         Reminder item = getItem(position);
         if (item != null) {
             holder.itemTitle.setText(item.getTitle());
+            //Set date and time of event in itemTime
             calendar.setTimeInMillis(item.getEventTime());
             calendar.set(Calendar.SECOND, 0);
             switch (item.getMinutesBeforeEventTime()) {
@@ -88,19 +88,27 @@ TextView itemIsElapsed;
             calendar = Calendar.getInstance();
 
             if (calendar.getTimeInMillis() > reminderTime) {
-              holder.itemIsElapsed.setText(context.getString(R.string.alarmElapsed));
-            }
-            else{
+                holder.itemIsElapsed.setText(context.getString(R.string.alarmElapsed));
+            } else {
                 holder.itemIsElapsed.setText(context.getString(R.string.alarmSetted));
             }
         }
         return row;
     }
 
+    /**
+     * Toggle selection of item by its position
+     * @param position position of item in selectedItemsIds
+     */
     public void toggleSelection(int position) {
         selectView(position, !selectedItemsIds.get(position));
     }
 
+    /**
+     * Used in MultiChoiceModeListener to select or delete selection of item by its position
+     * @param position position of item in selectedItemsIds
+     * @param value true - select, false - delete selectiob
+     */
     public void selectView(int position, boolean value) {
         if (value)
             selectedItemsIds.put(position, value);
@@ -109,11 +117,18 @@ TextView itemIsElapsed;
         notifyDataSetChanged();
     }
 
+    /**
+     * Used in MultiChoiceModeListener to remove selection from all items
+     */
     public void removeSelection() {
         selectedItemsIds = new SparseBooleanArray();
         notifyDataSetChanged();
     }
 
+    /**
+     * Used in MultiChoiceModeListener to get all selected items
+     * @return Array of selected items
+     */
     public SparseBooleanArray getSelectedIds() {
         return selectedItemsIds;
     }

@@ -2,19 +2,10 @@ package com.example.viktoria.reminderexample;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.Fragment;
-import android.app.PendingIntent;
 import android.app.TimePickerDialog;
-import android.content.AsyncQueryHandler;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.CalendarContract;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,12 +21,10 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import java.text.Format;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 /**
- * A main screen of application, that allow to create reminder in two ways: with notification from this app or with use of local calendar
+ * Detail screen of reminder. Allow to create reminder in two ways: with notification from this app or with use of local calendar
  */
 public class ReminderFragment extends Fragment {
     private View rootView;
@@ -48,13 +37,8 @@ public class ReminderFragment extends Fragment {
     private TimePickerDialog timePicker;
     private ActionBar actionBar;
     private Reminder r;
-    OnReminderChangeListener mCallback;
-    boolean editMode = false;
-    /**
-     * helps format date and time into selected format
-     */
-    public Format dateFormat = new SimpleDateFormat("dd MMMM yyyy");
-    public Format timeFormat = new SimpleDateFormat("HH:mm");
+    private OnReminderChangeListener mCallback;
+    boolean editMode = false; //true when modifying existing reminder, false when creating new reminder
 
     // interface to communicate with other fragment through activity, fragment shouldn't know about parent activity
     public interface OnReminderChangeListener {
@@ -93,6 +77,7 @@ public class ReminderFragment extends Fragment {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), R.layout.simple_spinner_item, getResources().getStringArray(R.array.remind_time));
         remindTimeSpinner.setAdapter(adapter);
+        //set spinner selection according to minutesBeforeEventTime field in Reminder
         switch (r.getMinutesBeforeEventTime()) {
             case ON_TIME:
                 remindTimeSpinner.setSelection(0);
@@ -113,8 +98,8 @@ public class ReminderFragment extends Fragment {
         if (r.getEventTime() != 0) {
             calendar.setTimeInMillis(r.getEventTime());
         }
-        dateLabel.setText(dateFormat.format(calendar.getTime()));
-        timeLabel.setText(timeFormat.format(calendar.getTime()));
+        dateLabel.setText(MainActivity.dateFormat.format(calendar.getTime()));
+        timeLabel.setText(MainActivity.timeFormat.format(calendar.getTime()));
         datePicker = new DatePickerDialog(getActivity(),
                 new DatePickerDialog.OnDateSetListener() {
                     @Override
@@ -122,7 +107,7 @@ public class ReminderFragment extends Fragment {
                                           int monthOfYear, int dayOfMonth) {
                         //update calendar instance and dateLabel
                         calendar.set(year, monthOfYear, dayOfMonth);
-                        dateLabel.setText(dateFormat.format(calendar.getTime()));
+                        dateLabel.setText(MainActivity.dateFormat.format(calendar.getTime()));
                     }
                 }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
 
@@ -133,7 +118,7 @@ public class ReminderFragment extends Fragment {
                 calendar.set(Calendar.HOUR_OF_DAY, selectedHour);
                 calendar.set(Calendar.MINUTE, selectedMinute);
                 calendar.set(Calendar.SECOND, 0);
-                timeLabel.setText(timeFormat.format(calendar.getTime()));
+                timeLabel.setText(MainActivity.timeFormat.format(calendar.getTime()));
             }
         }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
         dateLabel.setOnClickListener(new View.OnClickListener() {
@@ -188,7 +173,7 @@ public class ReminderFragment extends Fragment {
 
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
-                    + " must implement OnReminderCreatedListener");
+                    + " " + getActivity().getString(R.string.castExc) + " " + OnReminderChangeListener.class);
         }
     }
 
@@ -233,7 +218,12 @@ public class ReminderFragment extends Fragment {
         return false;
     }
 
-    private void initReminder(Reminder r){
+    /**
+     * Get all input data to set them to reminder object
+     *
+     * @param r object where selected input data would be set
+     */
+    private void initReminder(Reminder r) {
         r.setTitle(titleET.getText().toString());
         r.setDescription(descrET.getText().toString());
         r.setEventTime(calendar.getTimeInMillis());
