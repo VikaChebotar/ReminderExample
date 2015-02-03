@@ -146,6 +146,7 @@ public class ReminderFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.findItem(R.id.action_add).setVisible(false);
+        menu.findItem(R.id.action_settings).setVisible(false);
         if (editMode) {
             menu.findItem(R.id.action_delete).setVisible(true);
         }
@@ -195,9 +196,6 @@ public class ReminderFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case android.R.id.home:
-                getActivity().getFragmentManager().popBackStack();
-                return true;
             case R.id.action_delete:
                 mCallback.onReminderDelete(r);
                 return true;

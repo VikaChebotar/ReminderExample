@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="title">Name</string>
+    <string name="descr">Description</string>
+    <string name="setDateLabel">Date:</string>
+    <string name="setTimeLabel">Time:</string>
+    <string name="remindTimeLabel">Remind</string>
+    <string name="toastNoTitle">Specify the name of the event</string>
+    <string name="toastReminderSetTo">Reminder is set to</string>
+    <string name="checkbox">Remind trough calendar</string>
+    <string name="no_items">There are no reminders.Press + button in action bar to create new reminder</string>
+    <string name="list_fragment_title">List of reminders</string>
+    <string name="reminder_fragment_title">Reminder</string>
+    <string name="action_add">Add</string>
+    <string name="action_accept">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="selected">Selected</string>
+    <string name="logMes">Reminder with name</string>
+    <string name="logMesCreated">has been created and setted to</string>
+    <string name="action_settings">Settings</string>
+    <string name="logMesUpdated">has been updated and setted to</string>
+    <string name="logMesDeleted">has been deleted.</string>
+    <string name="alarmSetted">Setted</string>
+    <string name="alarmElapsed">Out of date</string>
+    <string name="langPrefTitle">Language</string>
+    <string name="langPrefSummary">Defines the interface language</string>
+
+    <string-array name="remind_time">
+        <item>in time</item>
+        <item>1 min before</item>
+        <item>5 min before</item>
+        <item>1 day before</item>
+    </string-array>
+    <string-array name="lang_array">
+        <item>RUSSIAN</item>
+        <item>UKRAINIAN</item>
+        <item>ENGLISH</item>
+    </string-array>
+
+</resources>

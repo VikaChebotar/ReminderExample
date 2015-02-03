@@ -2,6 +2,8 @@ package com.example.viktoria.reminderexample;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.app.PendingIntent;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
@@ -15,6 +17,7 @@ import android.provider.CalendarContract;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import java.text.Format;
@@ -26,7 +29,7 @@ import java.util.ArrayList;
  * Activity show all existing reminders, allow to add new, edit or delete reminder. List of reminders are saved in SQLite db.
  * Implements ReminderListFragment.ReminderListListener and ReminderFragment.OnReminderChangeListener to enable communication between fragments and activity.
  */
-public class MainActivity extends Activity implements ReminderListFragment.ReminderListListener, ReminderFragment.OnReminderChangeListener {
+public class MainActivity extends Activity implements ReminderListFragment.ReminderListListener, ReminderFragment.OnReminderChangeListener, PrefFragment.OnLanguageChangeListener {
     private ArrayList<Reminder> reminderItems;
     /**
      * helps format date and time into selected format
@@ -43,6 +46,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         if (savedInstanceState == null) {
             reminderItems = retrieveReminders();
             ReminderListFragment list_fr = new ReminderListFragment();
@@ -56,12 +60,41 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         }
     }
 
+    /**
+     * Reload PrefFragment when language changed.
+     */
+    @Override
+    public void onLanguageChanged() {
+        Fragment currentFragment = getFragmentManager().findFragmentByTag(getString(R.string.prefFr));
+        FragmentTransaction fragTransaction = getFragmentManager().beginTransaction();
+        fragTransaction.remove(currentFragment).commit();
+        getFragmentManager().popBackStack();
+        fragTransaction = getFragmentManager().beginTransaction();
+        fragTransaction.replace(R.id.content_frame, new PrefFragment(),
+                getString(R.string.prefFr)).addToBackStack(
+                getString(R.string.prefFr)).commit();
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                getFragmentManager().popBackStack();
+                return true;
+            case R.id.action_settings:
+                getFragmentManager().beginTransaction().replace(R.id.content_frame, new PrefFragment(),
+                        getString(R.string.prefFr)).addToBackStack(
+                        getString(R.string.prefFr)).commit();
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -157,7 +190,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         reminderItems.remove(r);
         ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
         getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() +" "+getString(R.string.logMesDeleted));
+        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " " + getString(R.string.logMesDeleted));
         Log.e(MainActivity.TAG, getString(R.string.amountOfReminders) + db.getRemindersCount());
         if (r.isCalendarEventAdded()) {
             deleteEventFromCalendarProvider(r);
@@ -177,7 +210,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         for (Reminder r : reminders) {
             db.deleteReminder(r);
             reminderItems.remove(r);
-            Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() +" "+ getString(R.string.logMesDeleted));
+            Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " " + getString(R.string.logMesDeleted));
             if (r.isCalendarEventAdded()) {
                 deleteEventFromCalendarProvider(r);
             } else {
@@ -372,6 +405,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
 
     }
+
 
 
 }

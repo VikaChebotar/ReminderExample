@@ -46,6 +46,7 @@ public class ReminderListFragment extends ListFragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.findItem(R.id.action_delete).setVisible(false);
+        menu.findItem(R.id.action_settings).setVisible(true);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -112,9 +113,7 @@ public class ReminderListFragment extends ListFragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case android.R.id.home:
-                getActivity().getFragmentManager().popBackStack();
-                return true;
+
             case R.id.action_add:
                 mCallback.onReminderCreateNew();
                 return true;

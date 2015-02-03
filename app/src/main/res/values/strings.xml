@@ -1,40 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ReminderExample</string>
-
-    <string name="title">Название</string>
-    <string name="descr">Описание</string>
-    <string name="setDateLabel">Дата:</string>
-    <string name="setTimeLabel">Время:</string>
-    <string name="remindTimeLabel">Напомнить</string>
-    <string name="toastNoTitle">Укажите название события</string>
-    <string name="toastReminderSetTo">Напоминание установлено на </string>
-    <string name="checkbox">Напомнить через календарь</string>
     <string name="reminderListIntent">reminderList</string>
-    <string name="no_items">Нету напоминаний. Нажмите кнопку + в панели действий, чтоб создать новое напоминание</string>
     <string name="selectedTime">selectedTime</string>
-    <string name="list_fragment_title">Список напоминаний</string>
-    <string name="reminder_fragment_title">Напоминание</string>
     <string name="reminderIntent">reminder</string>
-    <string name="action_add">Добавить</string>
-    <string name="action_accept">Сохранить</string>
-    <string name="action_delete">Удалить</string>
-    <string name="selected">Выбрано</string>
-    <string name="logMes">Напоминание с названием</string>
-    <string name="logMesCreated">создано и установлено на </string>
-    <string name="logMesUpdated">изменено и установлено на </string>
-    <string name="logMesDeleted">удалено.</string>
-    <string name="alarmSetted">Установлено</string>
-    <string name="alarmElapsed">Устарело</string>
     <string name="listFr">list_fr</string>
     <string name="reminderFr">reminder_fr</string>
+    <string name="prefFr">pref_fr</string>
     <string name="castExc">must implement</string>
     <string name="amountOfReminders">amount of reminders:</string>
+    <string name="langPrefKey">language</string>
 
-    <string-array name="remind_time">
-        <item>вовремя</item>
-        <item>за 1 мин. до</item>
-        <item>за 5 мин. до</item>
-        <item>за 1 день</item>
+    <string-array name="lang_to_load_array">
+        <item>ru-RU</item>
+        <item>uk-UA</item>
+        <item>en-US</item>
     </string-array>
+
 </resources>

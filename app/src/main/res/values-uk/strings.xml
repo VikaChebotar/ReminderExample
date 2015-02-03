@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="title">Назва</string>
+    <string name="descr">Опис</string>
+    <string name="setDateLabel">Дата:</string>
+    <string name="setTimeLabel">Час:</string>
+    <string name="remindTimeLabel">Нагадати</string>
+    <string name="toastNoTitle">Вкажіть назву події</string>
+    <string name="toastReminderSetTo">Нагадування встановлено на </string>
+    <string name="checkbox">Нагадати через календар</string>
+    <string name="no_items">Немає нагадувань. Натисніть кнопку + в панелі дій, щоб створити нове нагадування</string>
+    <string name="list_fragment_title">Список нагадувань</string>
+    <string name="reminder_fragment_title">Нагадування</string>
+    <string name="action_add">Додати</string>
+    <string name="action_accept">Зберегти</string>
+    <string name="action_delete">Видалити</string>
+    <string name="selected">Вибрано</string>
+    <string name="logMes">Нагадування з назвою</string>
+    <string name="logMesCreated">створено та встановлено на </string>
+    <string name="action_settings">Налаштування</string>
+    <string name="logMesUpdated">змінено та встановлено</string>
+    <string name="logMesDeleted">видалено.</string>
+    <string name="alarmSetted">Встановлене</string>
+    <string name="alarmElapsed">Застарівше</string>
+    <string name="langPrefTitle">Мова</string>
+    <string name="langPrefSummary">Визначає мову інтерфейсу</string>
+
+    <string-array name="remind_time">
+        <item>вчасно</item>
+        <item>за 1 хв. до</item>
+        <item>за 5 хв. до</item>
+        <item>за 1 день</item>
+    </string-array>
+
+    <string-array name="lang_array">
+        <item>РОСІЙСЬКА</item>
+        <item>УКРАЇНСЬКА</item>
+        <item>АНГЛІЙСЬКА</item>
+    </string-array>
+
+</resources>
