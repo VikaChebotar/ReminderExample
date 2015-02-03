@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">ReminderExample</string>
+    <string name="reminderListIntent">reminderList</string>
+    <string name="selectedTime">selectedTime</string>
+    <string name="reminderIntent">reminder</string>
+    <string name="listFr">list_fr</string>
+    <string name="reminderFr">reminder_fr</string>
+    <string name="prefFr">pref_fr</string>
+    <string name="castExc">must implement</string>
+    <string name="amountOfReminders">amount of reminders:</string>
+    <string name="langPrefKey">language</string>
 
     <string name="title">Название</string>
     <string name="descr">Описание</string>
@@ -37,5 +47,9 @@
         <item>УКРАИНСКИЙ</item>
         <item>АНГЛИЙСКИЙ</item>
     </string-array>
-
+    <string-array name="lang_to_load_array">
+        <item>ru-RU</item>
+        <item>uk-UA</item>
+        <item>en-US</item>
+    </string-array>
 </resources>
