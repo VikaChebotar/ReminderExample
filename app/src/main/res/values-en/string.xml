@@ -23,6 +23,8 @@
     <string name="reminder_fragment_title">Reminder</string>
     <string name="action_add">Add</string>
     <string name="action_accept">Save</string>
+    <string name="action_sync_birthdays">Sync friends bdays</string>
+    <string name="sync_bdays_activity">Sync friends bdays</string>
     <string name="action_delete">Delete</string>
     <string name="selected">Selected</string>
     <string name="logMes">Reminder with name</string>

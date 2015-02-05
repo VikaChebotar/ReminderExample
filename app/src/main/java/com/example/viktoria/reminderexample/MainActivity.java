@@ -74,6 +74,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                 getString(R.string.prefFr)).addToBackStack(
                 getString(R.string.prefFr)).commit();
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu items for use in the action bar
@@ -92,6 +93,10 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                 getFragmentManager().beginTransaction().replace(R.id.content_frame, new PrefFragment(),
                         getString(R.string.prefFr)).addToBackStack(
                         getString(R.string.prefFr)).commit();
+                return true;
+            case R.id.action_sync_birthdays:
+                Intent i = new Intent(MainActivity.this, SyncBirthdaysActivity.class);
+                startActivityForResult(i, 0);
                 return true;
         }
         return false;
@@ -405,7 +410,6 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
 
     }
-
 
 
 }

@@ -26,6 +26,8 @@
     <string name="action_accept">Сохранить</string>
     <string name="action_delete">Удалить</string>
     <string name="selected">Выбрано</string>
+    <string name="sync_bdays_activity">Синхронизация ДР друзей</string>
+    <string name="action_sync_birthdays">Синхронизировать ДР друзей</string>
     <string name="logMes">Напоминание с названием</string>
     <string name="logMesCreated">создано и установлено на </string>
     <string name="action_settings">Настройки</string>

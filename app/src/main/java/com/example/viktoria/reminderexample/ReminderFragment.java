@@ -151,6 +151,8 @@ public class ReminderFragment extends Fragment {
             menu.findItem(R.id.action_delete).setVisible(true);
         }
         menu.findItem(R.id.action_accept).setVisible(true);
+
+        menu.findItem(R.id.action_sync_birthdays).setVisible(false);
         super.onCreateOptionsMenu(menu, inflater);
     }
 

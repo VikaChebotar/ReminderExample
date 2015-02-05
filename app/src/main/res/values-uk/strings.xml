@@ -30,6 +30,8 @@
     <string name="action_settings">Налаштування</string>
     <string name="logMesUpdated">змінено та встановлено</string>
     <string name="logMesDeleted">видалено.</string>
+    <string name="action_sync_birthdays">Синхронізувати ДН друзів</string>
+    <string name="sync_bdays_activity">Синхронізація ДН друзів</string>
     <string name="alarmSetted">Встановлене</string>
     <string name="alarmElapsed">Застарівше</string>
     <string name="langPrefTitle">Мова</string>

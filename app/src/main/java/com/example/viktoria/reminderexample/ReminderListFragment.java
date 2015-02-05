@@ -117,6 +117,7 @@ public class ReminderListFragment extends ListFragment {
             case R.id.action_add:
                 mCallback.onReminderCreateNew();
                 return true;
+
         }
         return false;
     }
