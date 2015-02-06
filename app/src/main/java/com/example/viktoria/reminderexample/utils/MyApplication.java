@@ -1,8 +1,10 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.utils;
 
 import android.app.Application;
 import android.content.res.Configuration;
 import android.preference.PreferenceManager;
+
+import com.example.viktoria.reminderexample.R;
 
 import java.util.Locale;
 

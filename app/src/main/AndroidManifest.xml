@@ -7,15 +7,16 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
-        android:name=".MyApplication"
+        android:name=".utils.MyApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".view.MainActivity"
             android:label="@string/app_name"
 
             >
@@ -26,11 +27,23 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SyncBirthdaysActivity" />
+            android:name=".view.SyncBirthdaysActivity" />
 
-        <service android:name=".MyNotificationService" />
+        <service android:name=".services.MyNotificationService" />
 
-        <receiver android:name=".MyReceiver" />
+        <receiver android:name=".services.ReminderReceiver" />
+
+        <receiver android:name=".services.OnBootReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".services.SyncBdaysReceiver" >
+        </receiver>
+
+        <service android:name=".services.SyncBdaysIntentService" >
+        </service>
     </application>
 
 </manifest>

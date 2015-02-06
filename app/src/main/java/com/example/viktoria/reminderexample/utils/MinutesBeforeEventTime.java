@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.utils;
 
 /**
  * Enum that represents all existing values of time behind the event to alarm. User can set it in ReminderFragment's spinner.

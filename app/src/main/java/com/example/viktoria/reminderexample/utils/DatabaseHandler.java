@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.utils;
 
 import android.content.ContentValues;
 import android.content.Context;

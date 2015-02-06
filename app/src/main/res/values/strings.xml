@@ -22,7 +22,7 @@
     <string name="no_items">Нету напоминаний. Нажмите кнопку + в панели действий, чтоб создать новое напоминание</string>
     <string name="list_fragment_title">Список напоминаний</string>
     <string name="sync_bdays_activity">Синхронизация ДР друзей</string>
-
+    <string name="action_sync_birthdays">Синхронизировать ДР друзей</string>
     <string name="reminder_fragment_title">Напоминание</string>
     <string name="action_add">Добавить</string>
     <string name="action_accept">Сохранить</string>
@@ -31,7 +31,6 @@
     <string name="logMes">Напоминание с названием</string>
     <string name="logMesCreated">создано и установлено на </string>
     <string name="action_settings">Настройки</string>
-
     <string name="logMesUpdated">изменено и установлено на </string>
     <string name="logMesDeleted">удалено.</string>
     <string name="alarmSetted">Установлено</string>

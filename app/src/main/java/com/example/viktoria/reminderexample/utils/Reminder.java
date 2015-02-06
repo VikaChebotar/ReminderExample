@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.utils;
 
 import android.os.Parcel;
 import android.os.Parcelable;

@@ -39,7 +39,7 @@ ADDED from AndroidManifest.xml:8:5
 		ADDED from AndroidManifest.xml:10:9
 	android:theme
 		ADDED from AndroidManifest.xml:12:9
-activity#com.example.viktoria.reminderexample.MainActivity
+activity#com.example.viktoria.reminderexample.view.MainActivity
 ADDED from AndroidManifest.xml:13:9
 	android:label
 		ADDED from AndroidManifest.xml:15:13
@@ -55,11 +55,11 @@ category#android.intent.category.LAUNCHER
 ADDED from AndroidManifest.xml:20:17
 	android:name
 		ADDED from AndroidManifest.xml:20:27
-service#com.example.viktoria.reminderexample.MyNotificationService
+service#com.example.viktoria.reminderexample.services.MyNotificationService
 ADDED from AndroidManifest.xml:24:1
 	android:name
 		ADDED from AndroidManifest.xml:24:10
-receiver#com.example.viktoria.reminderexample.MyReceiver
+receiver#com.example.viktoria.reminderexample.services.MyReceiver
 ADDED from AndroidManifest.xml:26:9
 	android:name
 		ADDED from AndroidManifest.xml:26:19

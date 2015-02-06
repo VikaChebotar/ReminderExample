@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.view;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -20,6 +20,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
+
+import com.example.viktoria.reminderexample.R;
+import com.example.viktoria.reminderexample.utils.MinutesBeforeEventTime;
+import com.example.viktoria.reminderexample.utils.Reminder;
 
 import java.util.Calendar;
 

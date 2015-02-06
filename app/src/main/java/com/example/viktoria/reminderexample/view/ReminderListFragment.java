@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.view;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -14,6 +14,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.ListView;
+
+import com.example.viktoria.reminderexample.R;
+import com.example.viktoria.reminderexample.utils.MyListAdapter;
+import com.example.viktoria.reminderexample.utils.Reminder;
 
 import java.util.ArrayList;
 

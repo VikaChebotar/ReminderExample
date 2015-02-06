@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.view;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -9,6 +9,8 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.view.Menu;
 import android.view.MenuInflater;
+
+import com.example.viktoria.reminderexample.R;
 
 import java.util.Locale;
 

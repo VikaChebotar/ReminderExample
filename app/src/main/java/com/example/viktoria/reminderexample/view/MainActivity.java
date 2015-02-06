@@ -1,4 +1,4 @@
-package com.example.viktoria.reminderexample;
+package com.example.viktoria.reminderexample.view;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -19,6 +19,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
+
+import com.example.viktoria.reminderexample.R;
+import com.example.viktoria.reminderexample.services.ReminderReceiver;
+import com.example.viktoria.reminderexample.utils.DatabaseHandler;
+import com.example.viktoria.reminderexample.utils.Reminder;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -260,7 +265,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      * @param r reminder to cancel
      */
     public void cancelAlarmManagerReminder(Reminder r) {
-        Intent intentAlarm = new Intent(this, MyReceiver.class);
+        Intent intentAlarm = new Intent(this, ReminderReceiver.class);
         intentAlarm.putExtra(getString(R.string.reminderIntent), r);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
@@ -289,7 +294,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      */
     public void setAlarmService(Reminder r) {
 
-        Intent intentAlarm = new Intent(MainActivity.this, MyReceiver.class);
+        Intent intentAlarm = new Intent(MainActivity.this, ReminderReceiver.class);
         intentAlarm.putExtra(getString(R.string.reminderIntent), r);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         long triggerAtMillis = r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000;
