@@ -37,7 +37,11 @@
     <string name="alarmElapsed">Устарело</string>
     <string name="langPrefTitle">Язык</string>
     <string name="langPrefSummary">Определяет язык интерфейса</string>
-
+    <string name="bday">День Рождения</string>
+    <string name="alert_dialog_text_no_internet">Проверьте интернет-подключение и попробуйте еще раз!</string>
+    <string name="alert_dialog_button_reload">Попробовать еще раз</string>
+    <string name="alert_dialog_text_sync_error">Произошла ошибка</string>
+    <string name="alert_dialog_button_cancel">Отмена</string>
     <string-array name="remind_time">
         <item>вовремя</item>
         <item>за 1 мин. до</item>

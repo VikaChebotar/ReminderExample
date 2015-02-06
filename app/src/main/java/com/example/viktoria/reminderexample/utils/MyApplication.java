@@ -1,7 +1,10 @@
 package com.example.viktoria.reminderexample.utils;
 
 import android.app.Application;
+import android.content.Context;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 
 import com.example.viktoria.reminderexample.R;
@@ -45,4 +48,15 @@ public class MyApplication extends Application {
             getBaseContext().getResources().updateConfiguration(config, null);
         }
     }
+
+    public static boolean isConnected(Context mContext) {
+        ConnectivityManager connMgr = (ConnectivityManager) mContext
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected())
+            return true;
+        else
+            return false;
+    }
+
 }

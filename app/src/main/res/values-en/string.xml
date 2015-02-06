@@ -36,6 +36,11 @@
     <string name="alarmElapsed">Out of date</string>
     <string name="langPrefTitle">Language</string>
     <string name="langPrefSummary">Defines the interface language</string>
+    <string name="bday">День Рождения</string>
+    <string name="alert_dialog_text_no_internet">Please check your internet connection and try again!</string>
+    <string name="alert_dialog_button_reload">Try again</string>
+    <string name="alert_dialog_text_sync_error">Error happened</string>
+    <string name="alert_dialog_button_cancel">Cancel</string>
 
     <string-array name="remind_time">
         <item>in time</item>

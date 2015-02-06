@@ -2,6 +2,7 @@ package com.example.viktoria.reminderexample.view;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.PendingIntent;
@@ -10,6 +11,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -205,7 +207,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         if (r.isCalendarEventAdded()) {
             deleteEventFromCalendarProvider(r);
         } else {
-            cancelAlarmManagerReminder(r);
+            cancelAlarmManagerReminder(r, this);
         }
     }
 
@@ -224,7 +226,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
             if (r.isCalendarEventAdded()) {
                 deleteEventFromCalendarProvider(r);
             } else {
-                cancelAlarmManagerReminder(r);
+                cancelAlarmManagerReminder(r, this);
             }
         }
         Log.e(MainActivity.TAG, getString(R.string.amountOfReminders) + db.getRemindersCount());
@@ -249,26 +251,33 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      */
     public void setReminder(Reminder r) {
         if (r.isCalendarEventAdded()) {
-            cancelAlarmManagerReminder(r);
+            cancelAlarmManagerReminder(r, this);
             insertEventToCalendarProvider(r);
         } else {
             if (r.getEventId() != 0) {
                 deleteEventFromCalendarProvider(r);
             }
-            setAlarmService(r);
+            setAlarmService(r, this);
+            StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
+            sb.append(" ");
+            sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+            sb.append(", ");
+            sb.append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+            Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
         }
     }
 
     /**
      * Cancel reminder notification setted by AlarmManager
      *
-     * @param r reminder to cancel
+     * @param r       reminder to cancel
+     * @param context
      */
-    public void cancelAlarmManagerReminder(Reminder r) {
-        Intent intentAlarm = new Intent(this, ReminderReceiver.class);
-        intentAlarm.putExtra(getString(R.string.reminderIntent), r);
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        alarmManager.cancel(PendingIntent.getBroadcast(this, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+    public static void cancelAlarmManagerReminder(Reminder r, Context context) {
+        Intent intentAlarm = new Intent(context, ReminderReceiver.class);
+        intentAlarm.putExtra(context.getString(R.string.reminderIntent), r);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(PendingIntent.getBroadcast(context, r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
     }
 
     /**
@@ -290,23 +299,19 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     /**
      * Set alarm service to show notification
      *
-     * @param r reminder to set as alarm
+     * @param r       reminder to set as alarm
+     * @param context
      */
-    public void setAlarmService(Reminder r) {
+    public static void setAlarmService(Reminder r, Context context) {
 
-        Intent intentAlarm = new Intent(MainActivity.this, ReminderReceiver.class);
-        intentAlarm.putExtra(getString(R.string.reminderIntent), r);
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intentAlarm = new Intent(context, ReminderReceiver.class);
+        intentAlarm.putExtra(context.getString(R.string.reminderIntent), r);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         long triggerAtMillis = r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000;
-        PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this
+        PendingIntent pi = PendingIntent.getBroadcast(context
                 , r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
         alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi);
-        StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
-        sb.append(" ");
-        sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-        sb.append(", ");
-        sb.append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-        Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
+
     }
 
     /**
@@ -416,5 +421,30 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
+        // Make sure the request was successful
+        if (resultCode == RESULT_OK) {
+            reminderItems = retrieveReminders();
+            ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
+        } else if (resultCode == RESULT_CANCELED) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder
+                    .setMessage(
+                            getResources().getString(
+                                    R.string.alert_dialog_text_sync_error))
+                    .setNegativeButton(getResources().getString(
+                            R.string.alert_dialog_button_cancel), new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+
+            AlertDialog alert = builder.create();
+            alert.show();
+        }
+    }
 }
