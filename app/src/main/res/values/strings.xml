@@ -10,7 +10,11 @@
     <string name="castExc">must implement</string>
     <string name="amountOfReminders">amount of reminders:</string>
     <string name="langPrefKey">language</string>
-
+    <string name="responseJSON">response</string>
+    <string name="itemsJSON">items</string>
+    <string name="bdateJSON">bdate</string>
+    <string name="first_nameJSON">first_name</string>
+    <string name="last_nameJSON">last_name</string>
     <string name="title">Название</string>
     <string name="descr">Описание</string>
     <string name="setDateLabel">Дата:</string>

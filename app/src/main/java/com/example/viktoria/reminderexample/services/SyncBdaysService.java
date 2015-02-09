@@ -26,13 +26,15 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * Created by Вика on 06.02.2015.
+ * Service that runs VK request to get friends info and then create reminders and adds to db all upcoming birthdays
  */
 public class SyncBdaysService extends Service {
     private VKRequest request;
     private ArrayList<Reminder> bday_list;
     public static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+    //action for broadcast receiver
     public static final String ACTION_SYNC_BDAYS_SERVICE = "com.example.viktoria.reminderexample.services.syncbdays";
+    //results of service work and activity for result
     public static final int RESULT_OK = 1;
     public static final int RESULT_ERROR = 2;
     public static final int RESULT_CANCEL = 3;
@@ -48,6 +50,10 @@ public class SyncBdaysService extends Service {
         return START_REDELIVER_INTENT;
     }
 
+    /**
+     * Sends VK request to get list of friends.
+     * If complete succesful then parse, add to db and create alarm reminders. Else set error status.
+     */
     private void sendRequest() {
 
         request = new VKRequest("friends.get", VKParameters.from("fields", "bdate", "name_case", "gen"));
@@ -57,8 +63,7 @@ public class SyncBdaysService extends Service {
 
             @Override
             public void onComplete(VKResponse response) {
-                //  super.onComplete(response);
-                Log.d(MainActivity.TAG, "onComplete " + response.responseString);
+                super.onComplete(response);
                 try {
                     bday_list = parseResponse(response.responseString);
                     DatabaseHandler db = DatabaseHandler.getInstance(SyncBdaysService.this);
@@ -91,30 +96,32 @@ public class SyncBdaysService extends Service {
             @Override
             public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
                 super.attemptFailed(request, attemptNumber, totalAttempts);
-                Log.d(MainActivity.TAG, "attemptFailed " + request + " " + attemptNumber + " " + totalAttempts);
-                //    result = RESULT_ERROR;
                 stopSelf();
             }
 
             @Override
             public void onError(VKError error) {
                 super.onError(error);
-                Log.d(MainActivity.TAG, "onError: " + error);
-                //  result = RESULT_ERROR;
+
                 stopSelf();
             }
 
             @Override
             public void onProgress(VKRequest.VKProgressType progressType, long bytesLoaded, long bytesTotal) {
                 super.onProgress(progressType, bytesLoaded, bytesTotal);
-                Log.d(MainActivity.TAG, "onProgress " + progressType + " " + bytesLoaded + " " + bytesTotal);
-                stopSelf();
+               stopSelf();
             }
         });
 
     }
 
-
+    /**
+     * Parse response of VK request to get friends
+     * @param response String representation of json response
+     * @return list of reminder objects that have upcoming reminder date
+     * @throws JSONException
+     * @throws ParseException
+     */
     private ArrayList<Reminder> parseResponse(String response) throws JSONException, ParseException {
         String title_part = getString(R.string.bday);
         StringBuilder title;
@@ -123,12 +130,13 @@ public class SyncBdaysService extends Service {
         String bdate;
         ArrayList<Reminder> bday_list = new ArrayList<Reminder>();
         JSONObject reader = new JSONObject(response);
-        JSONArray array = reader.getJSONObject("response").getJSONArray("items");
+        JSONArray array = reader.getJSONObject(getString(R.string.responseJSON)).getJSONArray(getString(R.string.itemsJSON));
         for (int i = 0; i < array.length(); i++) {
             JSONObject friend = array.getJSONObject(i);
-            bdate = friend.optString("bdate");
+            bdate = friend.optString(getString(R.string.bdateJSON));
             if (!bdate.isEmpty()) {
-                title = new StringBuilder(title_part).append(" ").append(friend.getString("first_name")).append(" ").append(friend.getString("last_name"));
+                title = new StringBuilder(title_part).append(" ").append(friend.getString(getString(R.string.first_nameJSON))).
+                        append(" ").append(friend.getString(getString(R.string.last_nameJSON)));
                 if (bdate.split("\\.").length > 2) {
                     bdate = bdate.substring(0, bdate.length() - 5);
                 }

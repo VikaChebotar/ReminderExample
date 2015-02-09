@@ -106,6 +106,9 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         return false;
     }
 
+    /**
+     * The comparator class that compares reminders depends on reminder date.
+     */
     Comparator<Reminder> reminderComparator = new Comparator<Reminder>() {
         public int compare(Reminder o1, Reminder o2) {
             long reminderTime1 = o1.getEventTime() - o1.getMinutesBeforeEventTime().getValue() * 60;
@@ -246,6 +249,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     public void onReminderDelete(Reminder r) {
         new AsyncTask<Reminder, Object, Object>() {
             Reminder r;
+
             @Override
             protected Object doInBackground(Reminder[] params) {
                 r = params[0];
@@ -487,10 +491,12 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // Make sure the request was successful
+        // Make sure the request to SyncBirthdayActivity was successful
         if (resultCode == SyncBdaysService.RESULT_OK) {
+            //refresh reminder list
             new RetrieveRemindersAsyncTask().execute();
         } else if (resultCode == SyncBdaysService.RESULT_ERROR) {
+            //show error dialog
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder
                     .setMessage(
@@ -508,10 +514,13 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
             AlertDialog alert = builder.create();
             alert.show();
         } else if (resultCode == SyncBdaysService.RESULT_CANCEL) {
-
+//back button was pressed
         }
     }
 
+    /**
+     * Async task that selects all reminders from db and create new ReminderListFragment to show them
+     */
     private class RetrieveRemindersAsyncTask extends AsyncTask {
         @Override
         protected Object doInBackground(Object[] params) {

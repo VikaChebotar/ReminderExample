@@ -1,9 +1,7 @@
 package com.example.viktoria.reminderexample.view;
 
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -16,7 +14,6 @@ import android.view.View;
 import android.widget.Button;
 
 import com.example.viktoria.reminderexample.R;
-import com.example.viktoria.reminderexample.services.ReminderReceiver;
 import com.example.viktoria.reminderexample.services.SyncBdaysService;
 import com.example.viktoria.reminderexample.utils.DatabaseHandler;
 import com.example.viktoria.reminderexample.utils.MyApplication;
@@ -32,15 +29,20 @@ import com.vk.sdk.dialogs.VKCaptchaDialog;
 import java.util.List;
 
 /**
- * Created by viktoria on 05.02.15.
+ * The activity that allows to get date of friends birthdays from VK.
+ * Asks to authorize in VK and then run service on button click, that executes request to get friends birthdays.
+ * Have possibility to delete all birthday reminders.
  */
 public class SyncBirthdaysActivity extends Activity {
+    //unique VK id for initialization of app
     private static final String VK_APP_ID = "4766773";
-    private static String sTokenKey = "VK_ACCESS_TOKEN";
-    private static String[] sMyScope = new String[]{VKScope.FRIENDS};
+    //key for shared preference
+    private static final String sTokenKey = "VK_ACCESS_TOKEN";
+    //list of permissions we ask user
+    private static final String[] sMyScope = new String[]{VKScope.FRIENDS};
     private MyBroadcastReceiver myBroadcastReceiver;
     private ProgressDialog pd;
-    public static final int SYNC_BIRTHDAYS_ALARM_SERVICE_REQUEST_CODE = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +58,7 @@ public class SyncBirthdaysActivity extends Activity {
 
         Button syncBtn = (Button) findViewById(R.id.syncBtn);
         Button deleteBtn = (Button) findViewById(R.id.deleteBtn);
-        if (isSyncedAlready()) {
+        if (isBdaysAlreadyAdded()) {
             deleteBtn.setVisibility(View.VISIBLE);
             syncBtn.setVisibility(View.GONE);
         } else {
@@ -72,14 +74,19 @@ public class SyncBirthdaysActivity extends Activity {
         deleteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cancelSyncing();
+                deleteBirthdays();
+                //return result to MainActivity
                 SyncBirthdaysActivity.this.setResult(SyncBdaysService.RESULT_OK);
                 finish();
             }
         });
     }
 
-    private boolean isSyncedAlready() {
+    /**
+     * Checks if there is already reminders of friends birthdays
+     * @return
+     */
+    private boolean isBdaysAlreadyAdded() {
         DatabaseHandler db = DatabaseHandler.getInstance(this);
         if (db.getBirthdayRemindersCount() > 0) {
             return true;
@@ -87,6 +94,10 @@ public class SyncBirthdaysActivity extends Activity {
         return false;
     }
 
+    /**
+     * Starts service of downloading friends info. Shows progress dialog.
+     * Register broadcast receiver to get result when service finish.
+     */
     private void startService() {
         pd = new ProgressDialog(this);
         pd.setMessage(getString(R.string.loading));
@@ -100,6 +111,9 @@ public class SyncBirthdaysActivity extends Activity {
         registerReceiver(myBroadcastReceiver, intentFilter);
     }
 
+    /**
+     * Checks network connection and call startService() when connection exists
+     */
     private void startServiceIfConnected() {
         if (!MyApplication.isConnected(SyncBirthdaysActivity.this)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(SyncBirthdaysActivity.this);
@@ -128,10 +142,10 @@ public class SyncBirthdaysActivity extends Activity {
         }
     }
 
-    private void cancelSyncing() {
-        Intent intentAlarm = new Intent(this, ReminderReceiver.class);
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        alarmManager.cancel(PendingIntent.getBroadcast(getBaseContext(),SYNC_BIRTHDAYS_ALARM_SERVICE_REQUEST_CODE, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+    /**
+     * Deletes all birthdays from db and cancel alarm reminders of them.
+     */
+    private void deleteBirthdays() {
         DatabaseHandler db = DatabaseHandler.getInstance(this);
         List<Reminder> r = db.getAllBirthdayReminders();
         for (Reminder item : r) {
@@ -140,7 +154,9 @@ public class SyncBirthdaysActivity extends Activity {
         db.deleteBirthdayReminders();
     }
 
-
+    /**
+     * BroadcastReceiver that handles response from SyncBdayService
+     */
     public class MyBroadcastReceiver extends BroadcastReceiver {
 
         @Override
@@ -188,22 +204,25 @@ public class SyncBirthdaysActivity extends Activity {
         }
     }
 
+    /**
+     * VK listener to handle token
+     */
     public VKSdkListener sdkListener = new VKSdkListener() {
         @Override
         public void onCaptchaError(VKError captchaError) {
-            Log.e(MainActivity.TAG, "onCaptchaError");
+
             new VKCaptchaDialog(captchaError).show();
         }
 
         @Override
         public void onTokenExpired(VKAccessToken expiredToken) {
-            Log.e(MainActivity.TAG, "onTokenExpired");
+
             VKSdk.authorize(sMyScope);
         }
 
         @Override
         public void onAccessDenied(VKError authorizationError) {
-            Log.e(MainActivity.TAG, "onAccessDenied");
+
             new AlertDialog.Builder(SyncBirthdaysActivity.this)
                     .setMessage(authorizationError.errorMessage)
                     .show();
@@ -211,20 +230,18 @@ public class SyncBirthdaysActivity extends Activity {
 
         @Override
         public void onReceiveNewToken(VKAccessToken newToken) {
-            Log.e(MainActivity.TAG, "onReceiveNewToken");
+
             newToken.saveTokenToSharedPreferences(SyncBirthdaysActivity.this, sTokenKey);
 
         }
 
         @Override
         public void onAcceptUserToken(VKAccessToken token) {
-            Log.e(MainActivity.TAG, "onAcceptUserToken");
 
         }
 
         @Override
         public void onRenewAccessToken(VKAccessToken token) {
-            Log.e(MainActivity.TAG, "onRenewAccessToken");
 
         }
 
