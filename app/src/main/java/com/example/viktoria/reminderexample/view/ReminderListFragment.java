@@ -3,6 +3,7 @@ package com.example.viktoria.reminderexample.view;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ListFragment;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.SparseBooleanArray;
 import android.view.ActionMode;
@@ -142,21 +143,34 @@ public class ReminderListFragment extends ListFragment {
         }
 
         @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+        public boolean onActionItemClicked(final ActionMode mode, MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.delete:
                     SparseBooleanArray selected = adapter
                             .getSelectedIds();
-                    ArrayList<Reminder> items_to_delete = new ArrayList<Reminder>();
+                    final ArrayList<Reminder> items_to_delete = new ArrayList<Reminder>();
                     for (int i = (selected.size() - 1); i >= 0; i--) {
                         if (selected.valueAt(i)) {
                             items_to_delete.add(adapter
                                     .getItem(selected.keyAt(i)));
                         }
                     }
-                    mCallback.onReminderBatchDelete(items_to_delete);
-                    // Close CAB
-                    mode.finish();
+                    new AsyncTask() {
+
+                        @Override
+                        protected Object doInBackground(Object[] params) {
+                            mCallback.onReminderBatchDelete(items_to_delete);
+                            return null;
+                        }
+
+                        @Override
+                        protected void onPostExecute(Object o) {
+                            super.onPostExecute(o);
+                            // Close CAB
+                            mode.finish();
+                        }
+                    }.execute();
+
                     return true;
                 case R.id.select_all:
                     for (int i = 0; i < getListView().getCount(); i++) {

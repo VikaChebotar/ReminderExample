@@ -1,7 +1,9 @@
 package com.example.viktoria.reminderexample.view;
 
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -14,6 +16,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.example.viktoria.reminderexample.R;
+import com.example.viktoria.reminderexample.services.ReminderReceiver;
 import com.example.viktoria.reminderexample.services.SyncBdaysService;
 import com.example.viktoria.reminderexample.utils.DatabaseHandler;
 import com.example.viktoria.reminderexample.utils.MyApplication;
@@ -37,6 +40,7 @@ public class SyncBirthdaysActivity extends Activity {
     private static String[] sMyScope = new String[]{VKScope.FRIENDS};
     private MyBroadcastReceiver myBroadcastReceiver;
     private ProgressDialog pd;
+    public static final int SYNC_BIRTHDAYS_ALARM_SERVICE_REQUEST_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,13 +66,6 @@ public class SyncBirthdaysActivity extends Activity {
         syncBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Log.e(MainActivity.TAG, "on click");
-//                AlarmManager am=(AlarmManager)getSystemService(Context.ALARM_SERVICE);
-//                Intent intent = new Intent(getBaseContext(), SyncBdaysReceiver.class);
-//                PendingIntent pi = PendingIntent.getBroadcast(getBaseContext(), 1, intent, 0);
-//                am.setRepeating(AlarmManager.RTC_WAKEUP,
-//                        Calendar.getInstance().getTimeInMillis()+100, AlarmManager.INTERVAL_DAY*7, pi);
-
                 startServiceIfConnected();
             }
         });
@@ -88,6 +85,19 @@ public class SyncBirthdaysActivity extends Activity {
             return true;
         }
         return false;
+    }
+
+    private void startService() {
+        pd = new ProgressDialog(this);
+        pd.setMessage(getString(R.string.loading));
+        pd.show();
+        Intent i = new Intent(SyncBirthdaysActivity.this, SyncBdaysService.class);
+        startService(i);
+        myBroadcastReceiver = new MyBroadcastReceiver();
+        //register BroadcastReceiver
+        IntentFilter intentFilter = new IntentFilter(SyncBdaysService.ACTION_SYNC_BDAYS_SERVICE);
+        intentFilter.addCategory(Intent.CATEGORY_DEFAULT);
+        registerReceiver(myBroadcastReceiver, intentFilter);
     }
 
     private void startServiceIfConnected() {
@@ -119,7 +129,9 @@ public class SyncBirthdaysActivity extends Activity {
     }
 
     private void cancelSyncing() {
-        //stop service
+        Intent intentAlarm = new Intent(this, ReminderReceiver.class);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(PendingIntent.getBroadcast(getBaseContext(),SYNC_BIRTHDAYS_ALARM_SERVICE_REQUEST_CODE, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
         DatabaseHandler db = DatabaseHandler.getInstance(this);
         List<Reminder> r = db.getAllBirthdayReminders();
         for (Reminder item : r) {
@@ -128,24 +140,11 @@ public class SyncBirthdaysActivity extends Activity {
         db.deleteBirthdayReminders();
     }
 
-    private void startService() {
-        pd = new ProgressDialog(this);
-        pd.setMessage(getString(R.string.loading));
-        pd.show();
-        Intent i = new Intent(SyncBirthdaysActivity.this, SyncBdaysService.class);
-        startService(i);
-        myBroadcastReceiver = new MyBroadcastReceiver();
-        //register BroadcastReceiver
-        IntentFilter intentFilter = new IntentFilter(SyncBdaysService.ACTION_SYNC_BDAYS_SERVICE);
-        intentFilter.addCategory(Intent.CATEGORY_DEFAULT);
-        registerReceiver(myBroadcastReceiver, intentFilter);
-    }
 
     public class MyBroadcastReceiver extends BroadcastReceiver {
 
         @Override
-        public void onReceive(Context context, Intent intent) {
-            stopService(new Intent(SyncBirthdaysActivity.this, SyncBdaysService.class));
+        public void onReceive(Context context, Intent intent) {;
             pd.cancel();
             switch (intent.getIntExtra(getString(R.string.result), SyncBdaysService.RESULT_ERROR)) {
                 case SyncBdaysService.RESULT_OK:
@@ -189,7 +188,7 @@ public class SyncBirthdaysActivity extends Activity {
         }
     }
 
-    private VKSdkListener sdkListener = new VKSdkListener() {
+    public VKSdkListener sdkListener = new VKSdkListener() {
         @Override
         public void onCaptchaError(VKError captchaError) {
             Log.e(MainActivity.TAG, "onCaptchaError");

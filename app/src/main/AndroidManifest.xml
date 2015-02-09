@@ -34,14 +34,6 @@
 
         <receiver android:name=".services.ReminderReceiver" />
 
-        <receiver android:name=".services.OnBootReceiver" >
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-
-        <receiver android:name=".services.SyncBdaysReceiver" >
-        </receiver>
 
         <service android:name=".services.SyncBdaysService" >
         </service>

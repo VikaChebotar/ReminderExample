@@ -211,6 +211,7 @@ public class ReminderFragment extends Fragment {
                     Toast.makeText(getActivity(), getString(R.string.toastNoTitle), Toast.LENGTH_SHORT).show();
                 } else {
                     initReminder(r);
+
                     if (editMode) {
                         mCallback.onReminderUpdate(r);
                     } else {

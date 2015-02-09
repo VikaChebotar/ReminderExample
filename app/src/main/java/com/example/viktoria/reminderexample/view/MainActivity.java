@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.util.Log;
@@ -31,6 +32,8 @@ import com.example.viktoria.reminderexample.utils.Reminder;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Activity that consist of 2 screens - list of reminders and detail reminder screen.
@@ -54,15 +57,8 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         if (savedInstanceState == null) {
-            reminderItems = retrieveReminders();
-            ReminderListFragment list_fr = new ReminderListFragment();
-            Bundle args = new Bundle();
-            args.putParcelableArrayList(getString(R.string.reminderListIntent), reminderItems);
-            list_fr.setArguments(args);
-            getFragmentManager().beginTransaction().replace(R.id.content_frame, list_fr,
-                    getString(R.string.listFr)).commit(); //set ReminderListFragment as visible one
+            new RetrieveRemindersAsyncTask().execute();
         } else {
             reminderItems = savedInstanceState.getParcelableArrayList(getString(R.string.reminderListIntent)); //retain list from saved state, no need to go to db again
         }
@@ -110,6 +106,21 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         return false;
     }
 
+    Comparator<Reminder> reminderComparator = new Comparator<Reminder>() {
+        public int compare(Reminder o1, Reminder o2) {
+            long reminderTime1 = o1.getEventTime() - o1.getMinutesBeforeEventTime().getValue() * 60;
+            long reminderTime2 = o2.getEventTime() - o2.getMinutesBeforeEventTime().getValue() * 60;
+            if (reminderTime1 == reminderTime2) {
+                return 0;
+            } else if (reminderTime1 > reminderTime2) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+    };
+
+
     /**
      * Get all reminders from db
      *
@@ -118,6 +129,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     private ArrayList<Reminder> retrieveReminders() {
         DatabaseHandler db = DatabaseHandler.getInstance(this);
         reminderItems = (ArrayList<Reminder>) db.getAllReminders();
+        Collections.sort(reminderItems, reminderComparator);
         return reminderItems;
     }
 
@@ -150,17 +162,33 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      */
     @Override
     public void onReminderCreated(Reminder r) {
-        DatabaseHandler db = DatabaseHandler.getInstance(this);
-        r = db.addReminder(r);
-        reminderItems.add(r);
-        setReminder(r);
-        ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
-        getFragmentManager().popBackStack();
-        StringBuilder sb = new StringBuilder(getString(R.string.logMes));
-        sb.append(" ").append(r.getTitle()).append(getString(R.string.logMesCreated)).append(" ");
-        sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-        sb.append(", ").append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-        Log.e(MainActivity.TAG, sb.toString());
+        new AsyncTask<Reminder, Object, Object>() {
+            Reminder r;
+
+            @Override
+            protected Object doInBackground(Reminder[] params) {
+                r = params[0];
+                DatabaseHandler db = DatabaseHandler.getInstance(MainActivity.this);
+                r = db.addReminder(r);
+                reminderItems.add(r);
+                setReminder(r);
+                Collections.sort(reminderItems, reminderComparator);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+                ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
+                getFragmentManager().popBackStack();
+                StringBuilder sb = new StringBuilder(getString(R.string.logMes));
+                sb.append(" ").append(r.getTitle()).append(getString(R.string.logMesCreated)).append(" ");
+                sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                sb.append(", ").append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                Log.e(MainActivity.TAG, sb.toString());
+            }
+        }.execute(r);
+
     }
 
     /**
@@ -170,25 +198,43 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      */
     @Override
     public void onReminderUpdate(Reminder r) {
-        DatabaseHandler db = DatabaseHandler.getInstance(this);
-        int rowsUpdated = db.updateReminder(r);
-        for (int i = 0; i < reminderItems.size(); i++) {
-            if (reminderItems.get(i).equals(r)) {
-                reminderItems.set(i, r);
-                break;
-            }
-        }
-        setReminder(r);
-        ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
-        getFragmentManager().popBackStack();
-        if (rowsUpdated > 0) {
-            StringBuilder sb = new StringBuilder(getString(R.string.logMes));
-            sb.append(" ").append(r.getTitle()).append(getString(R.string.logMesUpdated)).append(" ");
-            sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-            sb.append(", ").append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
 
-            Log.e(MainActivity.TAG, sb.toString());
-        }
+        new AsyncTask<Reminder, Void, Integer>() {
+            Reminder r;
+
+            @Override
+            protected Integer doInBackground(Reminder[] params) {
+                r = params[0];
+                DatabaseHandler db = DatabaseHandler.getInstance(MainActivity.this);
+                int rowsUpdated = db.updateReminder(r);
+                for (int i = 0; i < reminderItems.size(); i++) {
+                    if (reminderItems.get(i).equals(r)) {
+                        reminderItems.set(i, r);
+                        break;
+                    }
+                }
+                setReminder(r);
+                Collections.sort(reminderItems, reminderComparator);
+                return rowsUpdated;
+            }
+
+            @Override
+            protected void onPostExecute(Integer rowsUpdated) {
+
+                ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
+                getFragmentManager().popBackStack();
+                if (rowsUpdated > 0) {
+                    StringBuilder sb = new StringBuilder(getString(R.string.logMes));
+                    sb.append(" ").append(r.getTitle()).append(getString(R.string.logMesUpdated)).append(" ");
+                    sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+                    sb.append(", ").append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
+
+                    Log.e(MainActivity.TAG, sb.toString());
+                }
+            }
+        }.execute(r);
+
+
     }
 
     /**
@@ -198,18 +244,31 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      */
     @Override
     public void onReminderDelete(Reminder r) {
-        DatabaseHandler db = DatabaseHandler.getInstance(this);
-        db.deleteReminder(r);
-        reminderItems.remove(r);
-        ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
-        getFragmentManager().popBackStack();
-        Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " " + getString(R.string.logMesDeleted));
-        Log.e(MainActivity.TAG, getString(R.string.amountOfReminders) + db.getRemindersCount());
-        if (r.isCalendarEventAdded()) {
-            deleteEventFromCalendarProvider(r);
-        } else {
-            cancelAlarmManagerReminder(r, this);
-        }
+        new AsyncTask<Reminder, Object, Object>() {
+            Reminder r;
+            @Override
+            protected Object doInBackground(Reminder[] params) {
+                r = params[0];
+                DatabaseHandler db = DatabaseHandler.getInstance(MainActivity.this);
+                db.deleteReminder(r);
+                reminderItems.remove(r);
+                Log.e(MainActivity.TAG, getString(R.string.logMes) + " " + r.getTitle() + " " + getString(R.string.logMesDeleted));
+                Log.e(MainActivity.TAG, getString(R.string.amountOfReminders) + db.getRemindersCount());
+                if (r.isCalendarEventAdded()) {
+                    deleteEventFromCalendarProvider(r);
+                } else {
+                    cancelAlarmManagerReminder(r, MainActivity.this);
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+                ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
+                getFragmentManager().popBackStack();
+            }
+        }.execute(r);
     }
 
     /**
@@ -259,12 +318,18 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                 deleteEventFromCalendarProvider(r);
             }
             setAlarmService(r, this);
-            StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
+
+            final StringBuilder sb = new StringBuilder(getString(R.string.toastReminderSetTo));
             sb.append(" ");
             sb.append(dateFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
             sb.append(", ");
             sb.append(timeFormat.format(r.getEventTime() - r.getMinutesBeforeEventTime().getValue() * 60 * 1000));
-            Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
+            MainActivity.this.runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
+                }
+            });
+
         }
     }
 
@@ -304,7 +369,6 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
      * @param context
      */
     public static void setAlarmService(Reminder r, Context context) {
-
         Intent intentAlarm = new Intent(context, ReminderReceiver.class);
         intentAlarm.putExtra(context.getString(R.string.reminderIntent), r);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -312,7 +376,6 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
         PendingIntent pi = PendingIntent.getBroadcast(context
                 , r.getId(), intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
         alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi);
-
     }
 
     /**
@@ -426,13 +489,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Make sure the request was successful
         if (resultCode == SyncBdaysService.RESULT_OK) {
-            reminderItems = retrieveReminders();
-            ReminderListFragment list_fr = new ReminderListFragment();
-            Bundle args = new Bundle();
-            args.putParcelableArrayList(getString(R.string.reminderListIntent), reminderItems);
-            list_fr.setArguments(args);
-            getFragmentManager().beginTransaction().replace(R.id.content_frame, list_fr,
-                    getString(R.string.listFr)).commit(); //set ReminderListFragment as visible one
+            new RetrieveRemindersAsyncTask().execute();
         } else if (resultCode == SyncBdaysService.RESULT_ERROR) {
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder
@@ -450,9 +507,28 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
             AlertDialog alert = builder.create();
             alert.show();
-        }
-        else if(resultCode == SyncBdaysService.RESULT_CANCEL){
+        } else if (resultCode == SyncBdaysService.RESULT_CANCEL) {
 
         }
     }
+
+    private class RetrieveRemindersAsyncTask extends AsyncTask {
+        @Override
+        protected Object doInBackground(Object[] params) {
+            reminderItems = retrieveReminders();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Object o) {
+            super.onPostExecute(o);
+            ReminderListFragment list_fr = new ReminderListFragment();
+            Bundle args = new Bundle();
+            args.putParcelableArrayList(getString(R.string.reminderListIntent), reminderItems);
+            list_fr.setArguments(args);
+            getFragmentManager().beginTransaction().replace(R.id.content_frame, list_fr,
+                    getString(R.string.listFr)).commit(); //set ReminderListFragment as visible one
+        }
+    }
+
 }

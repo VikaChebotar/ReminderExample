@@ -46,6 +46,7 @@ public class MyNotificationService extends Service  {
         mBuilder.setContentIntent(pIntent);
        //r.getId() - unique id to create one more notification or update existing
         nm.notify(r.getId(), mBuilder.getNotification());
+       stopSelf();
     }
 
     public IBinder onBind(Intent arg0) {

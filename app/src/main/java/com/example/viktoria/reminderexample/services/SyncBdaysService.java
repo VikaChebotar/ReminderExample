@@ -36,6 +36,7 @@ public class SyncBdaysService extends Service {
     public static final int RESULT_OK = 1;
     public static final int RESULT_ERROR = 2;
     public static final int RESULT_CANCEL = 3;
+
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -48,20 +49,23 @@ public class SyncBdaysService extends Service {
     }
 
     private void sendRequest() {
+
         request = new VKRequest("friends.get", VKParameters.from("fields", "bdate", "name_case", "gen"));
         request.parseModel = false;
         request.executeWithListener(new VKRequest.VKRequestListener() {
             int result;
+
             @Override
             public void onComplete(VKResponse response) {
                 //  super.onComplete(response);
                 Log.d(MainActivity.TAG, "onComplete " + response.responseString);
-
                 try {
                     bday_list = parseResponse(response.responseString);
                     DatabaseHandler db = DatabaseHandler.getInstance(SyncBdaysService.this);
+                    db.deleteBirthdayReminders();
                     bday_list = db.addListOfReminders(bday_list);
                     for (int i = 0; i < bday_list.size(); i++) {
+                        MainActivity.cancelAlarmManagerReminder(bday_list.get(i), SyncBdaysService.this);
                         MainActivity.setAlarmService(bday_list.get(i), SyncBdaysService.this);
                     }
                     result = RESULT_OK;
@@ -81,27 +85,30 @@ public class SyncBdaysService extends Service {
                 intentResponse.addCategory(Intent.CATEGORY_DEFAULT);
                 intentResponse.putExtra(getString(R.string.result), result);
                 sendBroadcast(intentResponse);
+                stopSelf();
             }
 
             @Override
             public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
-               super.attemptFailed(request, attemptNumber, totalAttempts);
+                super.attemptFailed(request, attemptNumber, totalAttempts);
                 Log.d(MainActivity.TAG, "attemptFailed " + request + " " + attemptNumber + " " + totalAttempts);
-            //    result = RESULT_ERROR;
+                //    result = RESULT_ERROR;
+                stopSelf();
             }
 
             @Override
             public void onError(VKError error) {
-              super.onError(error);
+                super.onError(error);
                 Log.d(MainActivity.TAG, "onError: " + error);
-              //  result = RESULT_ERROR;
+                //  result = RESULT_ERROR;
+                stopSelf();
             }
 
             @Override
             public void onProgress(VKRequest.VKProgressType progressType, long bytesLoaded, long bytesTotal) {
                 super.onProgress(progressType, bytesLoaded, bytesTotal);
                 Log.d(MainActivity.TAG, "onProgress " + progressType + " " + bytesLoaded + " " + bytesTotal);
-
+                stopSelf();
             }
         });
 
@@ -129,7 +136,7 @@ public class SyncBdaysService extends Service {
                 eventTime = dateFormat.parse(bdate);
                 eventTime.setHours(9);
                 eventTime.setMinutes(0);
-                if(eventTime.after(Calendar.getInstance().getTime())) {
+                if (eventTime.after(Calendar.getInstance().getTime())) {
                     r = new Reminder(title.toString(), "", eventTime.getTime(), MinutesBeforeEventTime.ONE_DAY, false);
                     r.setBirthday(true);
                     bday_list.add(r);
@@ -139,5 +146,6 @@ public class SyncBdaysService extends Service {
 
         return bday_list;
     }
+
 
 }
