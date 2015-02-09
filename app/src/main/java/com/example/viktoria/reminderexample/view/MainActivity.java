@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.example.viktoria.reminderexample.R;
 import com.example.viktoria.reminderexample.services.ReminderReceiver;
+import com.example.viktoria.reminderexample.services.SyncBdaysService;
 import com.example.viktoria.reminderexample.utils.DatabaseHandler;
 import com.example.viktoria.reminderexample.utils.Reminder;
 
@@ -101,7 +102,7 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
                         getString(R.string.prefFr)).addToBackStack(
                         getString(R.string.prefFr)).commit();
                 return true;
-            case R.id.action_sync_birthdays:
+            case R.id.action_birthdays:
                 Intent i = new Intent(MainActivity.this, SyncBirthdaysActivity.class);
                 startActivityForResult(i, 0);
                 return true;
@@ -423,12 +424,16 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
         // Make sure the request was successful
-        if (resultCode == RESULT_OK) {
+        if (resultCode == SyncBdaysService.RESULT_OK) {
             reminderItems = retrieveReminders();
-            ((ReminderListFragment) getFragmentManager().findFragmentByTag(getString(R.string.listFr))).setReminderItems(reminderItems);
-        } else if (resultCode == RESULT_CANCELED) {
+            ReminderListFragment list_fr = new ReminderListFragment();
+            Bundle args = new Bundle();
+            args.putParcelableArrayList(getString(R.string.reminderListIntent), reminderItems);
+            list_fr.setArguments(args);
+            getFragmentManager().beginTransaction().replace(R.id.content_frame, list_fr,
+                    getString(R.string.listFr)).commit(); //set ReminderListFragment as visible one
+        } else if (resultCode == SyncBdaysService.RESULT_ERROR) {
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder
                     .setMessage(
@@ -445,6 +450,9 @@ public class MainActivity extends Activity implements ReminderListFragment.Remin
 
             AlertDialog alert = builder.create();
             alert.show();
+        }
+        else if(resultCode == SyncBdaysService.RESULT_CANCEL){
+
         }
     }
 }

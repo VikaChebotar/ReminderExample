@@ -15,6 +15,8 @@
     <string name="setDateLabel">Date:</string>
     <string name="setTimeLabel">Time:</string>
     <string name="remindTimeLabel">Remind</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_deselect_all">Cancel selection of all items</string>
     <string name="toastNoTitle">Specify the name of the event</string>
     <string name="toastReminderSetTo">Reminder is set to</string>
     <string name="checkbox">Remind trough calendar</string>
@@ -23,10 +25,14 @@
     <string name="reminder_fragment_title">Reminder</string>
     <string name="action_add">Add</string>
     <string name="action_accept">Save</string>
-    <string name="action_sync_birthdays">Sync friends bdays</string>
+    <string name="action_birthdays">Friends bdays</string>
     <string name="sync_bdays_activity">Sync friends bdays</string>
+    <string name="sync_birthdays_btn">Sync friends bdays</string>
     <string name="action_delete">Delete</string>
     <string name="selected">Selected</string>
+    <string name="loading">Loading...</string>
+
+    <string name="delete_birthdays_btn">Cancel syncronization of friends bdays</string>
     <string name="logMes">Reminder with name</string>
     <string name="logMesCreated">has been created and setted to</string>
     <string name="action_settings">Settings</string>

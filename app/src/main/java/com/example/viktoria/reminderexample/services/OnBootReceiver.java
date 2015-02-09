@@ -11,7 +11,6 @@ public class OnBootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        WakefulIntentService.acquireStaticLock(context); //acquire a partial WakeLock
-        context.startService(new Intent(context, SyncBdaysIntentService.class)); //start TaskBut
+        context.startService(new Intent(context, SyncBdaysService.class)); //start TaskBut
     }
 }

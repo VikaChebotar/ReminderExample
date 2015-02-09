@@ -24,8 +24,8 @@
         android:title="@string/action_settings"
         android:showAsAction="ifRoom"/>
     <item
-        android:id="@+id/action_sync_birthdays"
+        android:id="@+id/action_birthdays"
         android:icon="@drawable/ic_action_cc_bcc"
-        android:title="@string/action_sync_birthdays"
+        android:title="@string/action_birthdays"
         android:showAsAction="ifRoom"/>
 </menu>

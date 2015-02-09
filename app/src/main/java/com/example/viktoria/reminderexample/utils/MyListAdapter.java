@@ -95,12 +95,15 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
             } else {
                 holder.itemIsElapsed.setText(context.getString(R.string.alarmSetted));
             }
+
         }
+
         return row;
     }
 
     /**
      * Toggle selection of item by its position
+     *
      * @param position position of item in selectedItemsIds
      */
     public void toggleSelection(int position) {
@@ -109,8 +112,9 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
 
     /**
      * Used in MultiChoiceModeListener to select or delete selection of item by its position
+     *
      * @param position position of item in selectedItemsIds
-     * @param value true - select, false - delete selectiob
+     * @param value    true - select, false - delete selection
      */
     public void selectView(int position, boolean value) {
         if (value)
@@ -118,6 +122,17 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
         else
             selectedItemsIds.delete(position);
         notifyDataSetChanged();
+    }
+
+    /**
+     * Used in MultiChoiceModeListener to select all items
+     */
+    public void selectAll() {
+        removeSelection();
+        for (int i = 0; i < items.size(); i++) {
+           selectView(i, !selectedItemsIds.get(i));
+        }
+
     }
 
     /**
@@ -130,6 +145,7 @@ public class MyListAdapter extends ArrayAdapter<Reminder> {
 
     /**
      * Used in MultiChoiceModeListener to get all selected items
+     *
      * @return Array of selected items
      */
     public SparseBooleanArray getSelectedIds() {

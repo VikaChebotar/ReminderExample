@@ -16,6 +16,7 @@ public class Reminder implements Parcelable {
     private boolean isCalendarEventAdded; //flag that choose to set events and notify user by this app or by default calendar in device
     private int eventId; //if event is added to CalendarProvider (isCalendarEventAdded=true), eventId is id of event added to Events table
     private int reminderId; //if event is added to CalendarProvider (isCalendarEventAdded=true), reminderId is id of reminder added to Reminders table
+    private boolean isBirthday = false; //if event is reminder to friend's birhday  = true
 
     private Reminder(Parcel parcel) {
         id = parcel.readInt();
@@ -26,6 +27,7 @@ public class Reminder implements Parcelable {
         isCalendarEventAdded = parcel.readByte() != 0; //isCalendarEventAdded== true if byte != 0
         eventId = parcel.readInt();
         reminderId = parcel.readInt();
+        isBirthday =  parcel.readByte() != 0;
     }
 
     public Reminder() {
@@ -67,6 +69,14 @@ public class Reminder implements Parcelable {
 
     public String getTitle() {
         return title;
+    }
+
+    public boolean isBirthday() {
+        return isBirthday;
+    }
+
+    public void setBirthday(boolean isBirthday) {
+        this.isBirthday = isBirthday;
     }
 
     public MinutesBeforeEventTime getMinutesBeforeEventTime() {
@@ -121,6 +131,7 @@ public class Reminder implements Parcelable {
         parcel.writeByte((byte) (isCalendarEventAdded ? 1 : 0)); //if isCalendarEventAdded == true, byte == 1
         parcel.writeInt(eventId);
         parcel.writeInt(reminderId);
+        parcel.writeByte((byte) (isBirthday ? 1 : 0));
     }
 
     public static final Parcelable.Creator<Reminder> CREATOR = new Parcelable.Creator<Reminder>() {

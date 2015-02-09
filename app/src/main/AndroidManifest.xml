@@ -18,7 +18,6 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".view.MainActivity"
-            android:label="@string/app_name"
 
             >
             <intent-filter>
@@ -28,7 +27,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".view.SyncBirthdaysActivity" />
+            android:name=".view.SyncBirthdaysActivity"  android:label="@string/sync_bdays_activity" android:parentActivityName=".view.MainActivity"
+            />
 
         <service android:name=".services.MyNotificationService" />
 
@@ -43,7 +43,7 @@
         <receiver android:name=".services.SyncBdaysReceiver" >
         </receiver>
 
-        <service android:name=".services.SyncBdaysIntentService" >
+        <service android:name=".services.SyncBdaysService" >
         </service>
     </application>
 

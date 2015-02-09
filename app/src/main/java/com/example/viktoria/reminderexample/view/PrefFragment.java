@@ -59,7 +59,7 @@ public class PrefFragment extends PreferenceFragment {
         menu.findItem(R.id.action_settings).setVisible(false);
         menu.findItem(R.id.action_add).setVisible(false);
         menu.findItem(R.id.action_accept).setVisible(false);
-        menu.findItem(R.id.action_sync_birthdays).setVisible(false);
+        menu.findItem(R.id.action_birthdays).setVisible(false);
         super.onCreateOptionsMenu(menu, inflater);
     }
 

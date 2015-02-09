@@ -2,6 +2,7 @@ package com.example.viktoria.reminderexample.view;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -13,9 +14,10 @@ import android.view.View;
 import android.widget.Button;
 
 import com.example.viktoria.reminderexample.R;
-import com.example.viktoria.reminderexample.services.SyncBdaysIntentService;
-import com.example.viktoria.reminderexample.services.WakefulIntentService;
+import com.example.viktoria.reminderexample.services.SyncBdaysService;
+import com.example.viktoria.reminderexample.utils.DatabaseHandler;
 import com.example.viktoria.reminderexample.utils.MyApplication;
+import com.example.viktoria.reminderexample.utils.Reminder;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
@@ -23,6 +25,8 @@ import com.vk.sdk.VKSdkListener;
 import com.vk.sdk.VKUIHelper;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.dialogs.VKCaptchaDialog;
+
+import java.util.List;
 
 /**
  * Created by viktoria on 05.02.15.
@@ -32,6 +36,7 @@ public class SyncBirthdaysActivity extends Activity {
     private static String sTokenKey = "VK_ACCESS_TOKEN";
     private static String[] sMyScope = new String[]{VKScope.FRIENDS};
     private MyBroadcastReceiver myBroadcastReceiver;
+    private ProgressDialog pd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +49,16 @@ public class SyncBirthdaysActivity extends Activity {
         } else {
             VKSdk.authorize(sMyScope, true, false);
         }
+
         Button syncBtn = (Button) findViewById(R.id.syncBtn);
+        Button deleteBtn = (Button) findViewById(R.id.deleteBtn);
+        if (isSyncedAlready()) {
+            deleteBtn.setVisibility(View.VISIBLE);
+            syncBtn.setVisibility(View.GONE);
+        } else {
+            deleteBtn.setVisibility(View.GONE);
+            syncBtn.setVisibility(View.VISIBLE);
+        }
         syncBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -55,44 +69,74 @@ public class SyncBirthdaysActivity extends Activity {
 //                am.setRepeating(AlarmManager.RTC_WAKEUP,
 //                        Calendar.getInstance().getTimeInMillis()+100, AlarmManager.INTERVAL_DAY*7, pi);
 
-                if (!MyApplication.isConnected(SyncBirthdaysActivity.this)) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(SyncBirthdaysActivity.this);
-                    builder
-                            .setMessage(
-                                    getResources().getString(
-                                            R.string.alert_dialog_text_no_internet))
-                            .setCancelable(true)
-                            .setPositiveButton(
-                                    getResources().getString(
-                                            R.string.alert_dialog_button_reload),
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog,
-                                                            int id) {
-                                            if (!MyApplication.isConnected(SyncBirthdaysActivity.this)) {
-                                                dialog.cancel();
-                                                startService();
-                                            }
-
-                                        }
-                                    });
-
-                    AlertDialog alert = builder.create();
-                    alert.show();
-                } else {
-                    startService();
-                }
+                startServiceIfConnected();
+            }
+        });
+        deleteBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cancelSyncing();
+                SyncBirthdaysActivity.this.setResult(SyncBdaysService.RESULT_OK);
+                finish();
             }
         });
     }
 
-    private void startService() {
+    private boolean isSyncedAlready() {
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
+        if (db.getBirthdayRemindersCount() > 0) {
+            return true;
+        }
+        return false;
+    }
 
-        WakefulIntentService.acquireStaticLock(SyncBirthdaysActivity.this); //acquire a partial WakeLock
-        Intent i = new Intent(SyncBirthdaysActivity.this, SyncBdaysIntentService.class);
+    private void startServiceIfConnected() {
+        if (!MyApplication.isConnected(SyncBirthdaysActivity.this)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(SyncBirthdaysActivity.this);
+            builder
+                    .setMessage(
+                            getResources().getString(
+                                    R.string.alert_dialog_text_no_internet))
+                    .setCancelable(true)
+                    .setPositiveButton(
+                            getResources().getString(
+                                    R.string.alert_dialog_button_reload),
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                                    int id) {
+
+                                    dialog.cancel();
+                                    startServiceIfConnected();
+
+                                }
+                            });
+
+            AlertDialog alert = builder.create();
+            alert.show();
+        } else {
+            startService();
+        }
+    }
+
+    private void cancelSyncing() {
+        //stop service
+        DatabaseHandler db = DatabaseHandler.getInstance(this);
+        List<Reminder> r = db.getAllBirthdayReminders();
+        for (Reminder item : r) {
+            MainActivity.cancelAlarmManagerReminder(item, this);
+        }
+        db.deleteBirthdayReminders();
+    }
+
+    private void startService() {
+        pd = new ProgressDialog(this);
+        pd.setMessage(getString(R.string.loading));
+        pd.show();
+        Intent i = new Intent(SyncBirthdaysActivity.this, SyncBdaysService.class);
         startService(i);
         myBroadcastReceiver = new MyBroadcastReceiver();
         //register BroadcastReceiver
-        IntentFilter intentFilter = new IntentFilter(SyncBdaysIntentService.ACTION_SYNC_BDAYS_SERVICE);
+        IntentFilter intentFilter = new IntentFilter(SyncBdaysService.ACTION_SYNC_BDAYS_SERVICE);
         intentFilter.addCategory(Intent.CATEGORY_DEFAULT);
         registerReceiver(myBroadcastReceiver, intentFilter);
     }
@@ -101,19 +145,29 @@ public class SyncBirthdaysActivity extends Activity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            switch (intent.getIntExtra(getString(R.string.result), SyncBdaysIntentService.RESULT_ERROR)) {
-                case SyncBdaysIntentService.RESULT_OK:
-                    SyncBirthdaysActivity.this.setResult(RESULT_OK);
+            stopService(new Intent(SyncBirthdaysActivity.this, SyncBdaysService.class));
+            pd.cancel();
+            switch (intent.getIntExtra(getString(R.string.result), SyncBdaysService.RESULT_ERROR)) {
+                case SyncBdaysService.RESULT_OK:
+                    SyncBirthdaysActivity.this.setResult(SyncBdaysService.RESULT_OK);
                     finish();
                     break;
-                case SyncBdaysIntentService.RESULT_ERROR:
-                    SyncBirthdaysActivity.this.setResult(RESULT_CANCELED);
+                case SyncBdaysService.RESULT_ERROR:
+                    SyncBirthdaysActivity.this.setResult(SyncBdaysService.RESULT_ERROR);
                     finish();
                     break;
             }
+
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        stopService(new Intent(SyncBirthdaysActivity.this, SyncBdaysService.class));
+        SyncBirthdaysActivity.this.setResult(SyncBdaysService.RESULT_CANCEL);
+        finish();
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -130,7 +184,9 @@ public class SyncBirthdaysActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         VKUIHelper.onDestroy(this);
-        unregisterReceiver(myBroadcastReceiver);
+        if (myBroadcastReceiver != null) {
+            unregisterReceiver(myBroadcastReceiver);
+        }
     }
 
     private VKSdkListener sdkListener = new VKSdkListener() {

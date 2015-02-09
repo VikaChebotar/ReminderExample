@@ -30,10 +30,15 @@
     <string name="action_settings">Налаштування</string>
     <string name="logMesUpdated">змінено та встановлено</string>
     <string name="logMesDeleted">видалено.</string>
-    <string name="action_sync_birthdays">Синхронізувати ДН друзів</string>
+    <string name="action_birthdays">ДН друзів</string>
     <string name="sync_bdays_activity">Синхронізація ДН друзів</string>
+    <string name="sync_birthdays_btn">Синхронізувати ДН друзів</string>
+    <string name="delete_birthdays_btn">Відмінити синхронізацію ДН друзів</string>
+    <string name="loading">Завантаження...</string>
     <string name="alarmSetted">Встановлене</string>
     <string name="alarmElapsed">Застарівше</string>
+    <string name="action_select_all">Виділити всі</string>
+    <string name="action_deselect_all">Відмінити виділення всіх</string>
     <string name="langPrefTitle">Мова</string>
     <string name="langPrefSummary">Визначає мову інтерфейсу</string>
     <string name="bday">День Народження</string>

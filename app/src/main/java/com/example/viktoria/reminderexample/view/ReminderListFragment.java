@@ -71,7 +71,7 @@ public class ReminderListFragment extends ListFragment {
 
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
-                    +" "+ getActivity().getString(R.string.castExc)+" "+ReminderListFragment.class);
+                    + " " + getActivity().getString(R.string.castExc) + " " + ReminderListFragment.class);
         }
     }
 
@@ -111,6 +111,7 @@ public class ReminderListFragment extends ListFragment {
      */
     protected void setReminderItems(ArrayList<Reminder> reminderItems) {
         this.reminderItems = reminderItems;
+        adapter.notifyDataSetChanged();
     }
 
 
@@ -156,6 +157,24 @@ public class ReminderListFragment extends ListFragment {
                     mCallback.onReminderBatchDelete(items_to_delete);
                     // Close CAB
                     mode.finish();
+                    return true;
+                case R.id.select_all:
+                    for (int i = 0; i < getListView().getCount(); i++) {
+                        getListView().setItemChecked(i, true);
+                    }
+                    adapter.selectAll();
+                    mode.setTitle(getActivity().getString(R.string.selected) + " " + getListView().getCheckedItemCount());
+                    mode.getMenu().findItem(R.id.select_all).setVisible(false);
+                    mode.getMenu().findItem(R.id.deselect_all).setVisible(true);
+                    return true;
+                case R.id.deselect_all:
+                    for (int i = 0; i < getListView().getCount(); i++) {
+                        getListView().setItemChecked(i, false);
+                    }
+                    adapter.removeSelection();
+                    mode.setTitle(getActivity().getString(R.string.selected) + " " + getListView().getCheckedItemCount());
+                    mode.getMenu().findItem(R.id.select_all).setVisible(true);
+                    mode.getMenu().findItem(R.id.deselect_all).setVisible(false);
                     return true;
                 default:
                     return false;

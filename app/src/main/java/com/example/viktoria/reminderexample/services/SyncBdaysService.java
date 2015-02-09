@@ -1,6 +1,8 @@
 package com.example.viktoria.reminderexample.services;
 
+import android.app.Service;
 import android.content.Intent;
+import android.os.IBinder;
 import android.util.Log;
 
 import com.example.viktoria.reminderexample.R;
@@ -21,39 +23,46 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by Вика on 06.02.2015.
  */
-public class SyncBdaysIntentService extends WakefulIntentService {
+public class SyncBdaysService extends Service {
     private VKRequest request;
     private ArrayList<Reminder> bday_list;
-    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MMMM.yyyy");
+    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
     public static final String ACTION_SYNC_BDAYS_SERVICE = "com.example.viktoria.reminderexample.services.syncbdays";
     public static final int RESULT_OK = 1;
     public static final int RESULT_ERROR = 2;
-
-    public SyncBdaysIntentService() {
-        super(SyncBdaysIntentService.class.getName());
+    public static final int RESULT_CANCEL = 3;
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        sendRequest();
+        return START_REDELIVER_INTENT;
+    }
+
+    private void sendRequest() {
         request = new VKRequest("friends.get", VKParameters.from("fields", "bdate", "name_case", "gen"));
         request.parseModel = false;
         request.executeWithListener(new VKRequest.VKRequestListener() {
+            int result;
             @Override
             public void onComplete(VKResponse response) {
-              //  super.onComplete(response);
+                //  super.onComplete(response);
                 Log.d(MainActivity.TAG, "onComplete " + response.responseString);
-                int result;
+
                 try {
                     bday_list = parseResponse(response.responseString);
-                    DatabaseHandler db = DatabaseHandler.getInstance(SyncBdaysIntentService.this);
+                    DatabaseHandler db = DatabaseHandler.getInstance(SyncBdaysService.this);
                     bday_list = db.addListOfReminders(bday_list);
-                    for (int i = 0; i < 10; i++) {
-                        Log.e(MainActivity.TAG, bday_list.get(i).getId() + "");
-                        MainActivity.setAlarmService(bday_list.get(i), SyncBdaysIntentService.this);
+                    for (int i = 0; i < bday_list.size(); i++) {
+                        MainActivity.setAlarmService(bday_list.get(i), SyncBdaysService.this);
                     }
                     result = RESULT_OK;
                 } catch (JSONException e) {
@@ -76,35 +85,38 @@ public class SyncBdaysIntentService extends WakefulIntentService {
 
             @Override
             public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
-               // super.attemptFailed(request, attemptNumber, totalAttempts);
+               super.attemptFailed(request, attemptNumber, totalAttempts);
                 Log.d(MainActivity.TAG, "attemptFailed " + request + " " + attemptNumber + " " + totalAttempts);
+            //    result = RESULT_ERROR;
             }
 
             @Override
             public void onError(VKError error) {
-              //  super.onError(error);
+              super.onError(error);
                 Log.d(MainActivity.TAG, "onError: " + error);
+              //  result = RESULT_ERROR;
             }
 
             @Override
             public void onProgress(VKRequest.VKProgressType progressType, long bytesLoaded, long bytesTotal) {
-             //   super.onProgress(progressType, bytesLoaded, bytesTotal);
+                super.onProgress(progressType, bytesLoaded, bytesTotal);
                 Log.d(MainActivity.TAG, "onProgress " + progressType + " " + bytesLoaded + " " + bytesTotal);
+
             }
         });
-        super.onHandleIntent(intent);
+
     }
 
 
     private ArrayList<Reminder> parseResponse(String response) throws JSONException, ParseException {
         String title_part = getString(R.string.bday);
         StringBuilder title;
-        long eventTime;
+        Date eventTime;
         Reminder r;
         String bdate;
         ArrayList<Reminder> bday_list = new ArrayList<Reminder>();
         JSONObject reader = new JSONObject(response);
-        JSONArray array = reader.getJSONArray("items");
+        JSONArray array = reader.getJSONObject("response").getJSONArray("items");
         for (int i = 0; i < array.length(); i++) {
             JSONObject friend = array.getJSONObject(i);
             bdate = friend.optString("bdate");
@@ -114,9 +126,14 @@ public class SyncBdaysIntentService extends WakefulIntentService {
                     bdate = bdate.substring(0, bdate.length() - 5);
                 }
                 bdate += "." + Calendar.getInstance().get(Calendar.YEAR);
-                eventTime = dateFormat.parse(bdate).getTime();
-                r = new Reminder(title.toString(), "", eventTime, MinutesBeforeEventTime.ONE_DAY, false);
-                bday_list.add(r);
+                eventTime = dateFormat.parse(bdate);
+                eventTime.setHours(9);
+                eventTime.setMinutes(0);
+                if(eventTime.after(Calendar.getInstance().getTime())) {
+                    r = new Reminder(title.toString(), "", eventTime.getTime(), MinutesBeforeEventTime.ONE_DAY, false);
+                    r.setBirthday(true);
+                    bday_list.add(r);
+                }
             }
         }
 

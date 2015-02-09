@@ -26,6 +26,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String KEY_IS_CALENDAREVENT_ADDED = "isCalendarEventAdded";
     private static final String KEY_EVENT_ID = "eventId";
     private static final String KEY_REMINDER_ID = "reminderId";
+    private static final String KEY_IS_BIRHDAY = "isBirthday";
 
     /**
      * Constructor should be private to prevent direct instantiation.
@@ -52,7 +53,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 + KEY_ID + " INTEGER PRIMARY KEY," + KEY_TITLE + " TEXT,"
                 + KEY_DESCR + " TEXT," + KEY_EVENT_TIME
                 + " INTEGER," + KEY_MINUTES_BET + " INTEGER," + KEY_IS_CALENDAREVENT_ADDED +
-                " INTEGER," + KEY_EVENT_ID + " INTEGER," + KEY_REMINDER_ID + " INTEGER" + ")";
+                " INTEGER," + KEY_EVENT_ID + " INTEGER," + KEY_REMINDER_ID + " INTEGER," + KEY_IS_BIRHDAY + " INTEGER" + ")";
         db.execSQL(CREATE_REMINDER_TABLE);
     }
 
@@ -83,6 +84,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
         values.put(KEY_EVENT_ID, r.getEventId());
         values.put(KEY_REMINDER_ID, r.getReminderId());
+        int isBirthday = r.isBirthday() ? 1 : 0; //save boolean as int
+        values.put(KEY_IS_BIRHDAY, isBirthday);
         // Inserting Row
         int id = (int) db.insert(TABLE_REMINDER, null, values);
         r.setId(id);
@@ -95,7 +98,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         Reminder r;
         try {
             db.beginTransaction();
-            for(int i=0; i<list.size(); i++){
+            for (int i = 0; i < list.size(); i++) {
                 r = list.get(i);
                 ContentValues values = new ContentValues();
                 values.put(KEY_TITLE, r.getTitle());
@@ -106,6 +109,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
                 values.put(KEY_EVENT_ID, r.getEventId());
                 values.put(KEY_REMINDER_ID, r.getReminderId());
+                int isBirthday = r.isBirthday() ? 1 : 0; //save boolean as int
+                values.put(KEY_IS_BIRHDAY, isBirthday);
                 // Inserting Row
                 int id = (int) db.insert(TABLE_REMINDER, null, values);
                 r.setId(id);
@@ -142,6 +147,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 r.setCalendarEventAdded(Integer.parseInt(cursor.getString(5)) != 0);
                 r.setEventId(Integer.parseInt(cursor.getString(6)));
                 r.setReminderId(Integer.parseInt(cursor.getString(7)));
+                r.setBirthday(Integer.parseInt(cursor.getString(8)) != 0);
                 // Adding reminder to list
                 reminderList.add(r);
                 cursor.moveToNext();
@@ -179,8 +185,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         int isCalendarEventAdded = r.isCalendarEventAdded() ? 1 : 0;
         values.put(KEY_IS_CALENDAREVENT_ADDED, isCalendarEventAdded);
         values.put(KEY_EVENT_ID, r.getEventId());
-
         values.put(KEY_REMINDER_ID, r.getReminderId());
+        int isBirthday = r.isBirthday() ? 1 : 0; //save boolean as int
+        values.put(KEY_IS_BIRHDAY, isBirthday);
         // updating row
         return db.update(TABLE_REMINDER, values, KEY_ID + " = ?",
                 new String[]{String.valueOf(r.getId())});
@@ -198,5 +205,61 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         int count = cursor.getCount();
         cursor.close();
         return count;
+    }
+
+    /**
+     * Get amount of bday reminders, count lines in table
+     *
+     * @return amount of bday reminders
+     */
+    public int getBirthdayRemindersCount() {
+        String countQuery = "SELECT  * FROM " + TABLE_REMINDER + " WHERE " + KEY_IS_BIRHDAY + "=1";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(countQuery, null);
+        int count = cursor.getCount();
+        cursor.close();
+        return count;
+    }
+
+    /**
+     * Deletes all birthday reminders
+     */
+    public void deleteBirthdayReminders() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_REMINDER, KEY_IS_BIRHDAY + " = ?",
+                new String[]{"1"});
+        db.close();
+    }
+    /**
+     * Get list of all birthday reminders
+     *
+     * @return list of all birthday reminders
+     */
+    public List<Reminder> getAllBirthdayReminders() {
+        List<Reminder> reminderList = new ArrayList<Reminder>();
+        // Select All Query
+        String selectQuery = "SELECT  * FROM " + TABLE_REMINDER+" WHERE " + KEY_IS_BIRHDAY + "=1";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        // looping through all rows and adding to list
+        if (cursor.moveToFirst()) {
+            while (cursor.isAfterLast() == false) {
+                Reminder r = new Reminder();
+                r.setId(Integer.parseInt(cursor.getString(0)));
+                r.setTitle(cursor.getString(1));
+                r.setDescription(cursor.getString(2));
+                r.setEventTime(Long.parseLong(cursor.getString(3)));
+                r.setMinutesBeforeEventTime(MinutesBeforeEventTime.getTypeByValue(Integer.parseInt(cursor.getString(4))));
+                r.setCalendarEventAdded(Integer.parseInt(cursor.getString(5)) != 0);
+                r.setEventId(Integer.parseInt(cursor.getString(6)));
+                r.setReminderId(Integer.parseInt(cursor.getString(7)));
+                r.setBirthday(Integer.parseInt(cursor.getString(8)) != 0);
+                // Adding reminder to list
+                reminderList.add(r);
+                cursor.moveToNext();
+            }
+        }
+
+        return reminderList;
     }
 }
